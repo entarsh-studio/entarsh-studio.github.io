@@ -6,21 +6,5 @@
   "Logiciel",
   "Outil"
  ],
- "elements": [
-  {
-   "id": "mv2mbqs9qe2x",
-   "nom": "NdaPDF Editor",
-   "type": "Éditeur",
-   "version": "1.0",
-   "description": "NdaPDF Editor est un éditeur de documents PDF inspiré de l’interface et de la présentation de Microsoft Word. Il a pour objectif de proposer un environnement simple et intuitif permettant de consulter, de modifier et de mettre en forme des documents PDF.\n\nSon interface reprend les principes des logiciels de traitement de texte afin de faciliter la navigation et l’accès aux différents outils d’édition.\n\nLe projet est actuellement en cours de développement.",
-   "fichier": {
-    "chemin": "fichiers/ndapdf-editor-mv2mbqs9qe2x/editeur.py",
-    "nom": "editeur.py",
-    "taille": 84508
-   },
-   "image": "images/mv2mbqs9qe2x.png",
-   "ajoute_le": "2026-10-10T16:38:16.114Z",
-   "modifie_le": "2026-10-10T16:39:08.405Z"
-  }
- ]
+ "elements": []
 }
