@@ -50,11 +50,28 @@ svg { flex-shrink: 0; }
 @keyframes tour-beta { to { --angle: 360deg; } }
 @keyframes reflet-beta { 0%, 60% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
 .actions-entete { display: flex; gap: 10px; align-items: center; }
+/* Bouton Helper : doré (couleur de Helper), contour qui tourne, reflet, halo au survol */
 .lien-helper {
-  color: var(--texte); text-decoration: none; padding: 10px 15px; border-radius: 999px;
-  background: var(--carte); border: 1px solid var(--bord); backdrop-filter: blur(8px); font-size: .95rem;
+  position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 8px;
+  color: #ffd25a; text-decoration: none; font-weight: 600; font-size: .95rem;
+  padding: 8px 15px 8px 10px; border-radius: 999px; border: 1.5px solid transparent;
+  background:
+    linear-gradient(#16120a, #16120a) padding-box,
+    conic-gradient(from var(--angle), #f2ae02, #fff0b3, #b37f00, #f2ae02, #ffd25a, #8a6100, #f2ae02) border-box;
+  box-shadow: 0 0 12px rgba(242, 174, 2, .15);
+  animation: tour-beta 6s linear infinite;
+  transition: transform .15s, box-shadow .2s, color .2s;
 }
-.lien-helper:hover { border-color: rgba(255,255,255,.3); }
+.lien-helper img { border-radius: 6px; display: block; }
+.lien-helper .fleche { transition: transform .2s; }
+.lien-helper::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 236, 170, .35) 50%, transparent 65%);
+  transform: translateX(-120%); animation: reflet-beta 5s ease-in-out 1.5s infinite;
+}
+.lien-helper:hover { color: #ffe9a3; transform: translateY(-1px); box-shadow: 0 6px 26px rgba(242, 174, 2, .4); }
+.lien-helper:hover .fleche { transform: translate(2px, -2px); }
+.lien-helper:hover::after { animation-duration: 1.2s; animation-delay: 0s; }
 
 /* Bouton Gérer : bord arc-en-ciel aux couleurs de l'icône */
 .bouton-gerer {
@@ -289,5 +306,6 @@ input:not([type=checkbox]), textarea, select { width: 100%; }
   .carte, .bouton-gerer, .bouton-gerer svg { transition: none; }
   .carte:hover, .bouton-gerer:hover { transform: none; }
   .chargeur i { animation-duration: 3s; }
-  .badge-beta, .badge-beta::after { animation: none; }
+  .badge-beta, .badge-beta::after, .lien-helper, .lien-helper::after { animation: none; }
+  .lien-helper:hover { transform: none; }
 }

@@ -1,5 +1,5 @@
 {
- "version": "0.3.0",
+ "version": "0.3.1",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,13 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.3.1",
+   "date": "2026-10-10",
+   "nouveautes": [
+    "Bouton Helper by Entarsh aux couleurs de Helper (doré), avec son icône et des effets"
+   ]
+  },
   {
    "version": "0.3.0",
    "date": "2026-10-10",
