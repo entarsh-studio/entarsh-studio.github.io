@@ -1,5 +1,5 @@
 {
- "version": "0.3.1",
+ "version": "0.3.2",
  "beta": true,
  "actualites": [
   {
@@ -11,43 +11,105 @@
  ],
  "mises_a_jour": [
   {
+   "version": "0.3.2",
+   "date": "2026-10-10",
+   "nouveautes": [
+    {
+     "type": "amelioration",
+     "texte": "Onglet Mises à jour repensé : résumé de la version actuelle, frise animée, versions dépliables"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Étiquettes Nouveau, Amélioration, Correction et Sécurité sur chaque changement"
+    }
+   ]
+  },
+  {
    "version": "0.3.1",
    "date": "2026-10-10",
    "nouveautes": [
-    "Bouton Helper by Entarsh aux couleurs de Helper (doré), avec son icône et des effets"
+    {
+     "type": "amelioration",
+     "texte": "Bouton Helper by Entarsh aux couleurs de Helper (doré), avec son icône et des effets"
+    }
    ]
   },
   {
    "version": "0.3.0",
    "date": "2026-10-10",
    "nouveautes": [
-    "Gestion : on voit d'abord seulement la connexion, puis les onglets Élément et Actualité une fois connecté",
-    "Connexion plus sûre : jeton vérifié auprès de GitHub, chiffré avec un mot de passe, verrouillage automatique après 30 minutes",
-    "Les jetons « classiques » qui donnent accès à tout le compte sont refusés",
-    "Nouveau badge bêta animé"
+    {
+     "type": "amelioration",
+     "texte": "Gestion : on voit d'abord seulement la connexion, puis les onglets Élément et Actualité une fois connecté"
+    },
+    {
+     "type": "securite",
+     "texte": "Connexion plus sûre : jeton vérifié auprès de GitHub, chiffré avec un mot de passe, verrouillage automatique après 30 minutes"
+    },
+    {
+     "type": "securite",
+     "texte": "Les jetons « classiques » qui donnent accès à tout le compte sont refusés"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Nouveau badge bêta animé"
+    }
    ]
   },
   {
    "version": "0.2.0",
    "date": "2026-10-10",
    "nouveautes": [
-    "Onglets sur le côté : Catalogue, Actualités et Mises à jour",
-    "Critères de recherche : types, tri et date d'ajout",
-    "Badge bêta et numéro de version",
-    "Nouveau bouton Gérer et panneau de gestion repensé",
-    "Icône de chargement et progression des envois de fichiers",
-    "Icône du site réparée",
-    "Carrés du fond plus discrets au repos"
+    {
+     "type": "nouveau",
+     "texte": "Onglets sur le côté : Catalogue, Actualités et Mises à jour"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Critères de recherche : types, tri et date d'ajout"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Badge bêta et numéro de version"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Nouveau bouton Gérer et panneau de gestion repensé"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Icône de chargement et progression des envois de fichiers"
+    },
+    {
+     "type": "correction",
+     "texte": "Icône du site réparée"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Carrés du fond plus discrets au repos"
+    }
    ]
   },
   {
    "version": "0.1.0",
    "date": "2026-10-10",
    "nouveautes": [
-    "Lancement du site",
-    "Catalogue avec recherche et filtres par type",
-    "Dépôt de fichiers depuis le site",
-    "Fond animé : carrés qui s'allument et serpents"
+    {
+     "type": "nouveau",
+     "texte": "Lancement du site"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Catalogue avec recherche et filtres par type"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Dépôt de fichiers depuis le site"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Fond animé : carrés qui s'allument et serpents"
+    }
    ]
   }
  ]

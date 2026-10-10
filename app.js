@@ -139,6 +139,46 @@
           'Télécharger', el('span', {}, [f.nom, tailleLisible(f.taille)].filter(Boolean).join(' · '))) : null));
   }
 
+  // ---------- Mises à jour (frise) ----------
+  const TYPES_MAJ = {
+    nouveau: ['Nouveau', '#00ff95'], amelioration: ['Amélioration', '#00a3ff'],
+    correction: ['Correction', '#ff8a00'], securite: ['Sécurité', '#e600ff'],
+  };
+  const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+  function afficherMisesAJour() {
+    const majs = site.mises_a_jour || [];
+    const total = majs.reduce((t, m) => t + (m.nouveautes || []).length, 0);
+    const derniere = majs[0];
+    $('maj-resume').replaceChildren(
+      el('div', { class: 'maj-actuelle-bloc' },
+        el('span', { class: 'maj-etiquette' }, 'Version actuelle'),
+        el('div', { class: 'maj-grand' }, el('span', { class: 'maj-numero' }, site.version || '—'),
+          site.beta ? el('span', { class: 'badge-beta' }, 'Bêta') : null)),
+      el('div', { class: 'maj-stats' },
+        el('div', { class: 'maj-stat' }, el('strong', {}, String(majs.length)), el('span', {}, majs.length > 1 ? 'mises à jour' : 'mise à jour')),
+        el('div', { class: 'maj-stat' }, el('strong', {}, String(total)), el('span', {}, total > 1 ? 'changements' : 'changement')),
+        derniere ? el('div', { class: 'maj-stat' }, el('strong', {}, dateLisible(derniere.date).replace(/ \d{4}$/, '')), el('span', {}, 'dernière mise à jour')) : null));
+
+    $('liste-maj').replaceChildren(...majs.map((m, i) => {
+      const items = (m.nouveautes || []).map(n => typeof n === 'string' ? { type: 'nouveau', texte: n } : n);
+      const li = el('li', { class: 'maj' + (i === 0 ? ' actuelle ouvert' : ''), style: `--couleur:${COULEURS[(i * 4 + 5) % COULEURS.length]};--i:${Math.min(i, 8)}` });
+      const tete = el('button', { type: 'button', class: 'maj-tete', 'aria-expanded': String(i === 0),
+        onclick: () => { const o = li.classList.toggle('ouvert'); tete.setAttribute('aria-expanded', String(o)); } },
+        el('span', { class: 'maj-version' }, 'v' + m.version),
+        el('time', { datetime: m.date }, dateLisible(m.date)),
+        i === 0 ? el('span', { class: 'maj-pastille-actuelle' }, 'Actuelle') : null,
+        el('span', { class: 'maj-compte' }, pluriel(items.length, 'changement')),
+        el('span', { class: 'chevron', 'aria-hidden': 'true' }));
+      const corps = el('div', { class: 'maj-corps' }, el('div', {}, el('ul', { class: 'maj-liste' },
+        ...items.map((n, j) => {
+          const [nom, coul] = TYPES_MAJ[n.type] || TYPES_MAJ.nouveau;
+          return el('li', { style: `--j:${j}` }, el('span', { class: 'tag', style: `--tag:${coul}` }, nom), el('span', {}, n.texte));
+        }))));
+      li.append(tete, corps);
+      return li;
+    }));
+  }
+
   // ---------- Actualités & mises à jour ----------
   function afficherSite() {
     $('version-site').textContent = site.version || '—';
@@ -146,10 +186,7 @@
     $('liste-actus').replaceChildren(...(actus.length ? actus.map(a => el('article', { class: 'actu' },
       el('time', { datetime: a.date }, dateLisible(a.date)), el('h3', {}, a.titre), el('p', {}, a.texte)))
       : [el('p', { class: 'etat' }, 'Aucune actualité pour le moment.')]));
-    $('liste-maj').replaceChildren(...(site.mises_a_jour || []).map((m, i) => el('li', { class: 'maj', style: `--couleur:${COULEURS[(i * 4 + 5) % COULEURS.length]}` },
-      el('div', { class: 'maj-tete' }, el('strong', {}, 'Version ' + m.version), el('time', { datetime: m.date }, dateLisible(m.date)),
-        i === 0 ? el('span', { class: 'maj-actuelle' }, 'Actuelle') : null),
-      el('ul', {}, ...(m.nouveautes || []).map(n => el('li', {}, n))))));
+    afficherMisesAJour();
     listeActusGestion();
   }
 
