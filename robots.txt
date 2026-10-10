@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://entarsh-studio.github.io/sitemap.xml

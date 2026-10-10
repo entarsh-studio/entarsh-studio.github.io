@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entarsh Catalogue — by Entarsh Studio</title>
+<meta name="description" content="Entarsh Catalogue by Entarsh Studio : jeux vidéo, éditeurs, logiciels et outils créés par Entarsh Studio, à télécharger. Le compagnon de Helper by Entarsh.">
+<meta name="application-name" content="Entarsh Catalogue">
+<meta name="author" content="Entarsh Studio">
+<meta name="theme-color" content="#0b0b10">
+<link rel="canonical" href="https://entarsh-studio.github.io/">
+
+<!-- Icônes (Google prend celle du site racine) -->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="48x48" href="/icones/icone-48.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icones/icone-192.png">
+<link rel="apple-touch-icon" href="/icones/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<!-- Partage (Discord, réseaux…) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Entarsh Catalogue">
+<meta property="og:title" content="Entarsh Catalogue — by Entarsh Studio">
+<meta property="og:description" content="Jeux vidéo, éditeurs, logiciels et outils d'Entarsh Studio.">
+<meta property="og:url" content="https://entarsh-studio.github.io/">
+<meta property="og:image" content="https://entarsh-studio.github.io/icones/icone-512.png">
+<meta property="og:locale" content="fr_FR">
+
+<!-- Nom du site affiché par Google à la place de « GitHub Pages documentation » -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://entarsh-studio.github.io/#site",
+      "name": "Entarsh Catalogue",
+      "alternateName": ["Entarsh Catalogue by Entarsh Studio", "Entarsh Studio"],
+      "url": "https://entarsh-studio.github.io/",
+      "inLanguage": "fr",
+      "publisher": { "@id": "https://entarsh-studio.github.io/#studio" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://entarsh-studio.github.io/#studio",
+      "name": "Entarsh Studio",
+      "url": "https://entarsh-studio.github.io/",
+      "logo": "https://entarsh-studio.github.io/icones/icone-512.png"
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="fond" aria-hidden="true"></canvas>
+
+<header class="entete">
+  <a class="marque" href="/" aria-label="Entarsh Catalogue, accueil">
+    <img src="icones/icone-192.png" alt="" width="56" height="56">
+    <span>
+      <h1>Entarsh Catalogue</h1>
+      <small>by Entarsh Studio</small>
+    </span>
+  </a>
+  <a class="lien-helper" href="https://funguyhubgit.github.io/helper/">Helper by Entarsh ↗</a>
+</header>
+
+<main>
+  <section class="barre" aria-label="Recherche et filtres">
+    <input id="recherche" type="search" placeholder="Rechercher un jeu, un éditeur…" aria-label="Rechercher">
+    <div id="filtres" class="filtres" role="group" aria-label="Filtrer par type"></div>
+  </section>
+
+  <p id="etat" class="etat">Chargement du catalogue…</p>
+  <section id="grille" class="grille" aria-live="polite"></section>
+
+  <noscript>
+    <p class="etat">Entarsh Catalogue by Entarsh Studio : activez JavaScript pour parcourir les jeux vidéo, éditeurs et outils.</p>
+  </noscript>
+</main>
+
+<footer class="pied">
+  <span>© Entarsh Studio</span>
+  <button id="ouvrir-gestion" class="bouton-discret" type="button">Gérer</button>
+</footer>
+
+<!-- Panneau de gestion (dépôt de fichiers) -->
+<dialog id="gestion" class="panneau">
+  <form method="dialog" class="panneau-haut">
+    <h2>Gestion du catalogue</h2>
+    <button class="fermer" aria-label="Fermer">✕</button>
+  </form>
+
+  <details id="reglages" class="bloc">
+    <summary>Connexion GitHub</summary>
+    <p class="aide">Le jeton reste dans ce navigateur. Jeton « fine-grained » limité à ce dépôt, permission <b>Contents : Read and write</b>.</p>
+    <div class="ligne">
+      <label>Propriétaire<input id="gh-proprio" value="entarsh-studio"></label>
+      <label>Dépôt<input id="gh-depot" value="entarsh-studio.github.io"></label>
+      <label>Branche<input id="gh-branche" value="main"></label>
+    </div>
+    <label>Jeton<input id="gh-jeton" type="password" autocomplete="off" placeholder="github_pat_…"></label>
+    <div class="ligne">
+      <button id="gh-enregistrer" type="button" class="bouton">Enregistrer</button>
+      <button id="gh-oublier" type="button" class="bouton-discret">Oublier le jeton</button>
+    </div>
+  </details>
+
+  <form id="formulaire" class="bloc">
+    <h3 id="titre-formulaire">Ajouter un élément</h3>
+    <input type="hidden" id="f-id">
+    <div class="ligne">
+      <label>Nom<input id="f-nom" required maxlength="80"></label>
+      <label>Type
+        <input id="f-type" list="liste-types" required maxlength="40" placeholder="Jeu vidéo, Éditeur…">
+        <datalist id="liste-types"></datalist>
+      </label>
+      <label class="court">Version<input id="f-version" maxlength="20" placeholder="1.0"></label>
+    </div>
+    <label>Description<textarea id="f-description" rows="3" maxlength="600"></textarea></label>
+
+    <div id="depot" class="depot" tabindex="0">
+      <input id="f-fichier" type="file" hidden>
+      <p id="depot-texte">Glisser le fichier ici ou <u>choisir</u></p>
+    </div>
+    <label>…ou lien externe (fichiers de plus de 95 Mo, ex. GitHub Releases)
+      <input id="f-lien" type="url" placeholder="https://github.com/…/releases/download/…">
+    </label>
+    <label>Image (facultative)<input id="f-image" type="file" accept="image/png,image/jpeg,image/webp"></label>
+
+    <div class="ligne">
+      <button type="submit" class="bouton" id="f-valider">Publier</button>
+      <button type="button" class="bouton-discret" id="f-annuler" hidden>Annuler la modification</button>
+    </div>
+    <p id="f-statut" class="statut" role="status"></p>
+  </form>
+
+  <section class="bloc">
+    <h3>Éléments publiés</h3>
+    <ul id="liste-gestion" class="liste-gestion"></ul>
+  </section>
+</dialog>
+
+<script src="fond.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
