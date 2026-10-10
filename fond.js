@@ -86,7 +86,7 @@
     for (let y = 0; y < lignes; y++) for (let x = 0; x < cols; x++) {
       const k = cases[idx(x, y)], px = ox + x * pas, py = oy + y * pas;
       ctx.globalAlpha = 1;
-      ctx.fillStyle = 'rgba(255,255,255,0.035)';
+      ctx.fillStyle = 'rgba(255,255,255,0.016)';
       rect(px, py, taille, taille, r);
       if (k.e > 0.02) {
         ctx.fillStyle = COULEURS[k.c];

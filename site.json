@@ -1,0 +1,37 @@
+{
+ "version": "0.2.0",
+ "beta": true,
+ "actualites": [
+  {
+   "id": "ouverture",
+   "date": "2026-10-10",
+   "titre": "Entarsh Catalogue ouvre en bêta",
+   "texte": "Bienvenue sur Entarsh Catalogue, le catalogue des créations d'Entarsh Studio : jeux vidéo, éditeurs, logiciels et outils. Le site est en bêta, il va évoluer au fil des mises à jour."
+  }
+ ],
+ "mises_a_jour": [
+  {
+   "version": "0.2.0",
+   "date": "2026-10-10",
+   "nouveautes": [
+    "Onglets sur le côté : Catalogue, Actualités et Mises à jour",
+    "Critères de recherche : types, tri et date d'ajout",
+    "Badge bêta et numéro de version",
+    "Nouveau bouton Gérer et panneau de gestion repensé",
+    "Icône de chargement et progression des envois de fichiers",
+    "Icône du site réparée",
+    "Carrés du fond plus discrets au repos"
+   ]
+  },
+  {
+   "version": "0.1.0",
+   "date": "2026-10-10",
+   "nouveautes": [
+    "Lancement du site",
+    "Catalogue avec recherche et filtres par type",
+    "Dépôt de fichiers depuis le site",
+    "Fond animé : carrés qui s'allument et serpents"
+   ]
+  }
+ ]
+}
