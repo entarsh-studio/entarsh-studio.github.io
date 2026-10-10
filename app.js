@@ -3,7 +3,9 @@
   const COULEURS = ['#8b00ff', '#ffe000', '#ff0000', '#e600ff', '#40ff00', '#00a3ff', '#00ff95', '#ff0080', '#ff8a00'];
   const TYPES_DE_BASE = ['Jeu vidéo', 'Éditeur', 'Logiciel', 'Outil'];
   const LIMITE_OCTETS = 95 * 1024 * 1024; // GitHub refuse les fichiers de plus de 100 Mo
-  const CLE_REGLAGES = 'entarsh-catalogue-github';
+  const CLE_COFFRE = 'entarsh-catalogue-coffre';   // jeton chiffré (AES-GCM) + infos du dépôt
+  const DELAI_VERROU = 30 * 60 * 1000;             // verrouillage après 30 min sans activité
+  try { localStorage.removeItem('entarsh-catalogue-github'); } catch {} // ancien stockage en clair (v0.1–0.2)
   const VUES = ['catalogue', 'actualites', 'mises-a-jour'];
 
   const $ = id => document.getElementById(id);
@@ -152,13 +154,14 @@
   }
 
   // ---------- API GitHub ----------
-  function reglages() {
-    try { return JSON.parse(localStorage.getItem(CLE_REGLAGES)) || {}; } catch { return {}; }
-  }
+  // Le jeton déchiffré n'existe qu'en mémoire, jamais dans le stockage du navigateur.
+  let session = null; // { jeton, proprio, depot, branche, login }
+  const reglages = () => session || {};
   const urlApi = chemin => { const r = reglages(); return `https://api.github.com/repos/${r.proprio}/${r.depot}/contents/${encoderChemin(chemin)}`; };
   function entetes() {
     const r = reglages();
-    if (!r.jeton) throw new Error('Renseigne d\'abord le jeton GitHub (onglet Connexion).');
+    if (!r.jeton) throw new Error('La gestion est verrouillée : reconnecte-toi.');
+    activite();
     return { Authorization: `Bearer ${r.jeton}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
   }
   function erreurGitHub(status, message) {
@@ -239,45 +242,140 @@
   const dialogue = $('gestion');
   let fichierChoisi = null, imageChoisie = null, imageRetiree = false;
 
+  // ---------- Coffre : chiffrement du jeton avec le mot de passe (WebCrypto) ----------
+  const b64 = o => btoa(String.fromCharCode(...new Uint8Array(o)));
+  const deB64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+  async function cleDepuis(mdp, sel) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(mdp), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: sel, iterations: 310000, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+  function coffre() {
+    try { return JSON.parse(localStorage.getItem(CLE_COFFRE)); } catch { return null; }
+  }
+  async function enfermer(infos, jeton, mdp) {
+    const sel = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    const chiffre = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await cleDepuis(mdp, sel), new TextEncoder().encode(jeton));
+    localStorage.setItem(CLE_COFFRE, JSON.stringify({ ...infos, sel: b64(sel), iv: b64(iv), chiffre: b64(chiffre) }));
+  }
+  async function ouvrir(mdp) {
+    const c = coffre();
+    const clair = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: deB64(c.iv) }, await cleDepuis(mdp, deB64(c.sel)), deB64(c.chiffre));
+    return { proprio: c.proprio, depot: c.depot, branche: c.branche, login: c.login, jeton: new TextDecoder().decode(clair) };
+  }
+
+  // Vérifie le jeton auprès de GitHub : valide, et droit d'écriture sur ce dépôt précis
+  async function verifierJeton(jeton, proprio, depot) {
+    const h = { Authorization: `Bearer ${jeton}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    const u = await fetch('https://api.github.com/user', { headers: h });
+    if (u.status === 401) throw new Error('Jeton refusé par GitHub (invalide ou expiré).');
+    if (!u.ok) throw new Error(`GitHub ne répond pas correctement (${u.status}).`);
+    const login = (await u.json()).login;
+    const d = await fetch(`https://api.github.com/repos/${proprio}/${depot}`, { headers: h });
+    if (d.status === 404 || d.status === 403) throw new Error(`Ce jeton n'a pas accès au dépôt ${proprio}/${depot}.`);
+    if (!d.ok) throw new Error(`Impossible de vérifier le dépôt (${d.status}).`);
+    if (!(await d.json()).permissions?.push) throw new Error('Ce jeton peut lire le dépôt mais pas y écrire : ajoute la permission Contents : Read and write.');
+    return login;
+  }
+
+  // ---------- Verrouillage automatique ----------
+  let minuteur = null;
+  function activite() {
+    if (!session) return;
+    clearTimeout(minuteur);
+    minuteur = setTimeout(() => verrouiller('Gestion verrouillée après 30 minutes sans activité.'), DELAI_VERROU);
+  }
+  function verrouiller(message) {
+    session = null;
+    clearTimeout(minuteur);
+    afficherPanneau();
+    if (message) statut('d-statut', message, 'erreur');
+  }
+  dialogue.addEventListener('input', activite);
+  dialogue.addEventListener('click', activite);
+
+  // ---------- Affichage du panneau selon l'état de connexion ----------
   function ongletPanneau(nom) {
     document.querySelectorAll('.p-onglet').forEach(b => b.setAttribute('aria-selected', String(b.dataset.panneau === nom)));
     document.querySelectorAll('.p-vue').forEach(v => { v.hidden = v.dataset.panneau !== nom; });
   }
   document.querySelectorAll('.p-onglet').forEach(b => b.addEventListener('click', () => ongletPanneau(b.dataset.panneau)));
 
-  function majConnexion() {
-    const r = reglages(), ok = !!r.jeton;
-    $('etat-connexion').textContent = ok ? `Connecté à ${r.proprio}/${r.depot}` : 'Non connecté';
-    $('etat-connexion').classList.toggle('ok', ok);
-    return ok;
+  function afficherPanneau() {
+    const connecte = !!session, c = coffre();
+    $('panneau-onglets').hidden = !connecte;
+    $('verrouiller').hidden = !connecte;
+    $('etat-connexion').textContent = connecte ? `Connecté en tant que ${session.login} · ${session.proprio}/${session.depot}`
+      : c ? 'Verrouillé' : 'Non connecté';
+    $('etat-connexion').classList.toggle('ok', connecte);
+    if (connecte) {
+      ongletPanneau('element');
+      remplirTypes(); listeGestion(); listeActusGestion();
+      return;
+    }
+    ongletPanneau('connexion');
+    $('form-deverrouiller').hidden = !c;
+    $('form-connexion').hidden = !!c;
+    if (c) $('d-info').textContent = `Connexion enregistrée sur cet appareil pour ${c.login} (${c.proprio}/${c.depot}). Entre ton mot de passe pour continuer.`;
+    for (const id of ['d-mdp', 'c-jeton', 'c-mdp', 'c-mdp2']) $(id).value = '';
   }
 
   $('ouvrir-gestion').addEventListener('click', () => {
-    const r = reglages();
-    if (r.proprio) $('gh-proprio').value = r.proprio;
-    if (r.depot) $('gh-depot').value = r.depot;
-    if (r.branche) $('gh-branche').value = r.branche;
-    $('gh-jeton').value = r.jeton || '';
-    ongletPanneau(majConnexion() ? 'element' : 'connexion');
-    remplirTypes(); listeGestion(); listeActusGestion();
+    afficherPanneau();
+    statut('d-statut', ''); statut('c-statut', '');
     dialogue.showModal();
+    (session ? null : $(coffre() ? 'd-mdp' : 'c-jeton'))?.focus();
   });
   $('fermer-gestion').addEventListener('click', () => dialogue.close());
   dialogue.addEventListener('click', e => { if (e.target === dialogue) dialogue.close(); });
+  $('verrouiller').addEventListener('click', () => verrouiller());
 
-  $('gh-enregistrer').addEventListener('click', () => {
-    localStorage.setItem(CLE_REGLAGES, JSON.stringify({
-      proprio: $('gh-proprio').value.trim(), depot: $('gh-depot').value.trim(),
-      branche: $('gh-branche').value.trim() || 'main', jeton: $('gh-jeton').value.trim(),
-    }));
-    statut('c-statut', majConnexion() ? 'Connexion enregistrée.' : 'Réglages enregistrés, mais aucun jeton.', majConnexion() ? 'ok' : 'erreur');
+  // Première connexion
+  $('form-connexion').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const jeton = $('c-jeton').value.trim(), mdp = $('c-mdp').value;
+    const infos = { proprio: $('gh-proprio').value.trim(), depot: $('gh-depot').value.trim(), branche: $('gh-branche').value.trim() || 'main' };
+    if (mdp !== $('c-mdp2').value) return statut('c-statut', 'Les deux mots de passe ne sont pas identiques.', 'erreur');
+    if (mdp.length < 8) return statut('c-statut', 'Mot de passe trop court (8 caractères minimum).', 'erreur');
+    if (/^gh[pousr]_/.test(jeton)) return statut('c-statut', 'Ce jeton est un jeton « classique », qui donne accès à tout ton compte. Crée plutôt un jeton fine-grained limité au dépôt du site.', 'erreur');
+    const bouton = $('c-valider');
+    bouton.disabled = true; bouton.replaceChildren(chargeur(), ' Vérification…');
+    try {
+      infos.login = await verifierJeton(jeton, infos.proprio, infos.depot);
+      await enfermer(infos, jeton, mdp);
+      session = { ...infos, jeton };
+      activite();
+      afficherPanneau();
+    } catch (err) { statut('c-statut', err.message, 'erreur'); }
+    finally { bouton.disabled = false; bouton.textContent = 'Vérifier et se connecter'; }
   });
-  $('gh-oublier').addEventListener('click', () => {
-    const r = reglages(); delete r.jeton;
-    localStorage.setItem(CLE_REGLAGES, JSON.stringify(r));
-    $('gh-jeton').value = '';
-    majConnexion();
-    statut('c-statut', 'Jeton effacé de ce navigateur.', 'ok');
+
+  // Déverrouillage (avec pause après 5 essais ratés)
+  let essaisRates = 0, bloqueJusqua = 0;
+  $('form-deverrouiller').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    if (Date.now() < bloqueJusqua) return statut('d-statut', `Trop d'essais. Réessaie dans ${Math.ceil((bloqueJusqua - Date.now()) / 1000)} s.`, 'erreur');
+    const bouton = $('d-valider');
+    bouton.disabled = true; bouton.replaceChildren(chargeur(), ' Déverrouillage…');
+    try {
+      let s;
+      try { s = await ouvrir($('d-mdp').value); }
+      catch {
+        if (++essaisRates >= 5) { essaisRates = 0; bloqueJusqua = Date.now() + 30000; }
+        throw new Error('Mot de passe incorrect.');
+      }
+      essaisRates = 0;
+      await verifierJeton(s.jeton, s.proprio, s.depot).catch(e => { throw new Error(e.message + ' Utilise un autre jeton.'); });
+      session = s;
+      activite();
+      afficherPanneau();
+    } catch (err) { statut('d-statut', err.message, 'erreur'); }
+    finally { bouton.disabled = false; bouton.textContent = 'Déverrouiller'; }
+  });
+  $('d-oublier').addEventListener('click', () => {
+    if (!confirm('Effacer la connexion enregistrée sur cet appareil ?')) return;
+    localStorage.removeItem(CLE_COFFRE);
+    verrouiller();
   });
 
   function remplirTypes() {

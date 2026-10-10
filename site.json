@@ -1,5 +1,5 @@
 {
- "version": "0.2.0",
+ "version": "0.3.0",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,16 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.3.0",
+   "date": "2026-10-10",
+   "nouveautes": [
+    "Gestion : on voit d'abord seulement la connexion, puis les onglets Élément et Actualité une fois connecté",
+    "Connexion plus sûre : jeton vérifié auprès de GitHub, chiffré avec un mot de passe, verrouillage automatique après 30 minutes",
+    "Les jetons « classiques » qui donnent accès à tout le compte sont refusés",
+    "Nouveau badge bêta animé"
+   ]
+  },
   {
    "version": "0.2.0",
    "date": "2026-10-10",

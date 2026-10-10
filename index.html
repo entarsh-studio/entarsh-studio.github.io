@@ -54,7 +54,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=0.2.0">
+<link rel="stylesheet" href="style.css?v=0.3.0">
 </head>
 <body>
 <canvas id="fond" aria-hidden="true"></canvas>
@@ -158,13 +158,15 @@
       <h2>Gestion du catalogue</h2>
       <span id="etat-connexion" class="etat-connexion"></span>
     </div>
-    <button type="button" class="fermer" id="fermer-gestion" aria-label="Fermer">✕</button>
+    <div class="haut-actions">
+      <button type="button" class="lien-discret" id="verrouiller" hidden>Se déconnecter</button>
+      <button type="button" class="fermer" id="fermer-gestion" aria-label="Fermer">✕</button>
+    </div>
   </div>
 
-  <nav class="panneau-onglets" role="tablist">
+  <nav id="panneau-onglets" class="panneau-onglets" role="tablist" hidden>
     <button type="button" class="p-onglet" data-panneau="element">Élément</button>
     <button type="button" class="p-onglet" data-panneau="actualite">Actualité</button>
-    <button type="button" class="p-onglet" data-panneau="connexion">Connexion</button>
   </nav>
 
   <!-- Élément -->
@@ -233,25 +235,49 @@
 
   <!-- Connexion -->
   <section class="p-vue" data-panneau="connexion" hidden>
-    <div class="formulaire">
-      <h3>Connexion GitHub</h3>
-      <p class="aide">Le jeton reste uniquement dans ce navigateur. Utilise un jeton « fine-grained » limité au dépôt du site, avec la permission <b>Contents : Read and write</b>.</p>
-      <div class="ligne">
-        <label>Propriétaire<input id="gh-proprio" value="entarsh-studio"></label>
-        <label>Dépôt<input id="gh-depot" value="entarsh-studio.github.io"></label>
-        <label class="court">Branche<input id="gh-branche" value="main"></label>
-      </div>
-      <label>Jeton<input id="gh-jeton" type="password" autocomplete="off" placeholder="github_pat_…"></label>
-      <p id="c-statut" class="statut" role="status"></p>
+    <!-- Déjà connecté sur cet appareil : mot de passe pour déverrouiller -->
+    <form id="form-deverrouiller" class="formulaire connexion" hidden>
+      <div class="cadenas" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z"/></svg></div>
+      <h3>Déverrouiller la gestion</h3>
+      <p class="aide" id="d-info"></p>
+      <label>Mot de passe de verrouillage<input id="d-mdp" type="password" autocomplete="current-password" required></label>
+      <p id="d-statut" class="statut" role="status"></p>
       <div class="ligne actions">
-        <button id="gh-enregistrer" type="button" class="bouton">Enregistrer</button>
-        <button id="gh-oublier" type="button" class="lien-discret">Oublier le jeton</button>
+        <button type="submit" class="bouton" id="d-valider">Déverrouiller</button>
+        <button type="button" class="lien-discret" id="d-oublier">Utiliser un autre jeton</button>
       </div>
-    </div>
+    </form>
+
+    <!-- Première connexion -->
+    <form id="form-connexion" class="formulaire connexion" hidden>
+      <div class="cadenas" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z"/></svg></div>
+      <h3>Connexion GitHub</h3>
+      <p class="aide">Crée un jeton <b>fine-grained</b> (GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens) : propriétaire <b>entarsh-studio</b>, accès au seul dépôt du site, permission <b>Contents : Read and write</b>, avec une date d'expiration.</p>
+      <label>Jeton<input id="c-jeton" type="password" autocomplete="off" placeholder="github_pat_…" required></label>
+      <div class="ligne">
+        <label>Mot de passe de verrouillage<input id="c-mdp" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Confirmer<input id="c-mdp2" type="password" autocomplete="new-password" minlength="8" required></label>
+      </div>
+      <details class="avance">
+        <summary>Dépôt (avancé)</summary>
+        <div class="ligne">
+          <label>Propriétaire<input id="gh-proprio" value="entarsh-studio" required></label>
+          <label>Dépôt<input id="gh-depot" value="entarsh-studio.github.io" required></label>
+          <label class="court">Branche<input id="gh-branche" value="main" required></label>
+        </div>
+      </details>
+      <ul class="securite">
+        <li>Le jeton est vérifié auprès de GitHub avant d'être accepté.</li>
+        <li>Il est chiffré (AES-256) avec ton mot de passe : sans lui, il est illisible.</li>
+        <li>La gestion se verrouille seule après 30 minutes sans activité et à chaque fermeture de la page.</li>
+      </ul>
+      <p id="c-statut" class="statut" role="status"></p>
+      <div class="ligne actions"><button type="submit" class="bouton" id="c-valider">Vérifier et se connecter</button></div>
+    </form>
   </section>
 </dialog>
 
-<script src="fond.js?v=0.2.0"></script>
-<script src="app.js?v=0.2.0"></script>
+<script src="fond.js?v=0.3.0"></script>
+<script src="app.js?v=0.3.0"></script>
 </body>
 </html>
