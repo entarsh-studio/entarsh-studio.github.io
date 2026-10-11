@@ -51,7 +51,7 @@ svg { flex-shrink: 0; }
 }
 @keyframes tour-beta { to { --angle: 360deg; } }
 @keyframes reflet-beta { 0%, 60% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
-.actions-entete { display: flex; gap: 10px; align-items: center; }
+.actions-entete { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 /* Bouton Helper : doré (couleur de Helper), contour qui tourne, reflet, halo au survol */
 .lien-helper {
   position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 8px;
@@ -74,6 +74,29 @@ svg { flex-shrink: 0; }
 .lien-helper:hover { color: #ffe9a3; transform: translateY(-1px); box-shadow: 0 6px 26px rgba(242, 174, 2, .4); }
 .lien-helper:hover .fleche { transform: translate(2px, -2px); }
 .lien-helper:hover::after { animation-duration: 1.2s; animation-delay: 0s; }
+
+/* Bouton de compte */
+.bouton-compte {
+  display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
+  font: 600 .95rem system-ui, sans-serif; color: var(--texte);
+  padding: 7px 15px 7px 7px; border-radius: 999px; background: var(--carte); border: 1px solid var(--bord); backdrop-filter: blur(8px);
+}
+.bouton-compte:not(.connecte) { padding-left: 15px; }
+.bouton-compte:not(.connecte) .avatar-compte { display: none; }
+.avatar-compte {
+  width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0;
+  font: 700 .9rem "Space Grotesk", sans-serif; color: #0b0b10;
+  background: linear-gradient(135deg, #8b00ff, #00a3ff 50%, #00ff95);
+}
+.avatar-compte.grand { width: 52px; height: 52px; border-radius: 14px; font-size: 1.5rem; }
+.panneau.panneau-compte { width: min(460px, 100% - 24px); }
+.compte-bascule { display: flex; gap: 4px; border-bottom: 1px solid var(--bord); margin: -6px 0 18px; }
+.compte-raison { padding: 10px 12px; border-radius: 10px; background: rgba(0,163,255,.08); border: 1px solid rgba(0,163,255,.25); color: #cfe9ff; text-align: center; }
+.compte-carte { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.compte-carte div { display: flex; flex-direction: column; }
+.compte-carte strong { font: 700 1.25rem "Space Grotesk", sans-serif; }
+.compte-carte span:not(.avatar-compte) { color: var(--doux); font-size: .88rem; }
+#compte-en-ligne .actions { margin-top: 10px; }
 
 /* Bouton Gérer : bord arc-en-ciel aux couleurs de l'icône */
 .bouton-gerer {

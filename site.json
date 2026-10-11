@@ -1,5 +1,5 @@
 {
- "version": "0.5.0",
+ "version": "0.6.0",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,24 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.6.0",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "nouveau",
+     "texte": "Comptes Entarsh Catalogue : création et connexion avec un pseudo et un mot de passe"
+    },
+    {
+     "type": "securite",
+     "texte": "Les J'aime demandent un compte : un seul J'aime par compte et par élément"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Gestion simplifiée : le gérant se connecte avec son compte, le jeton GitHub n'est enregistré qu'une fois"
+    }
+   ]
+  },
   {
    "version": "0.5.0",
    "date": "2026-10-11",

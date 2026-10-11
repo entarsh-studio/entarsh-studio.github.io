@@ -3,8 +3,7 @@
   const COULEURS = ['#8b00ff', '#ffe000', '#ff0000', '#e600ff', '#40ff00', '#00a3ff', '#00ff95', '#ff0080', '#ff8a00'];
   const TYPES_DE_BASE = ['Jeu vidéo', 'Éditeur', 'Logiciel', 'Outil'];
   const LIMITE_OCTETS = 95 * 1024 * 1024; // GitHub refuse les fichiers de plus de 100 Mo
-  const CLE_COFFRE = 'entarsh-catalogue-coffre';   // jeton chiffré (AES-GCM) + infos du dépôt
-  const DELAI_VERROU = 30 * 60 * 1000;             // verrouillage après 30 min sans activité
+  try { localStorage.removeItem('entarsh-catalogue-coffre'); } catch {} // ancien coffre local (v0.3–0.5), remplacé par les comptes
   try { localStorage.removeItem('entarsh-catalogue-github'); } catch {} // ancien stockage en clair (v0.1–0.2)
   const VUES = ['catalogue', 'actualites', 'mises-a-jour'];
 
@@ -22,27 +21,30 @@
   // ---------- Compteurs (Supabase, projet de Helper) ----------
   const SB_URL = 'https://hltchrwrefrrfhtzimkn.supabase.co';
   const SB_CLE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdGNocndyZWZycmZodHppbWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyMTUzMjMsImV4cCI6MjEwNjc5MTMyM30.aXJkkgIz89wsDw_7HrxesbvopPrkFleVfMVLB7X9GkM';
-  const SB_ENTETES = { apikey: SB_CLE, Authorization: `Bearer ${SB_CLE}`, 'Content-Type': 'application/json' };
+  const sb = window.supabase.createClient(SB_URL, SB_CLE, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'entarsh-catalogue.session' } });
+  const DOMAINE_LOGIN = 'helper-entarsh.fr';
   let stats = {};            // { id: { telechargements, likes, vues } }
   let statsDispo = false;    // false tant que les tables n'existent pas dans Supabase
+  let compte = null;         // { pseudo, rang, likes: [] } quand connecté
+  let mesLikes = new Set();
   const lireLocal = (cle, defaut) => { try { return JSON.parse(localStorage.getItem(cle)) ?? defaut; } catch { return defaut; } };
   const ecrireLocal = (cle, v) => { try { localStorage.setItem(cle, JSON.stringify(v)); } catch {} };
-  let visiteur = lireLocal('entarsh-catalogue-visiteur', null);
-  if (!visiteur) { visiteur = crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); ecrireLocal('entarsh-catalogue-visiteur', visiteur); }
-  const mesLikes = new Set(lireLocal('entarsh-catalogue-likes', []));
+  try { localStorage.removeItem('entarsh-catalogue-visiteur'); localStorage.removeItem('entarsh-catalogue-likes'); } catch {}
   const mesTelechargements = lireLocal('entarsh-catalogue-telechargements', {});
   const stat = (id, cle) => stats[id]?.[cle] ?? 0;
+  const estGerant = () => compte?.rang === 'gerant';
 
   async function chargerStats() {
     try {
-      const r = await fetch(`${SB_URL}/rest/v1/catalogue_stats?select=id,telechargements,likes,vues`, { headers: SB_ENTETES, cache: 'no-store' });
-      if (!r.ok) return;
-      stats = Object.fromEntries((await r.json()).map(x => [x.id, x]));
+      const { data, error } = await sb.from('catalogue_stats').select('id,telechargements,likes,vues');
+      if (error) return;
+      stats = Object.fromEntries(data.map(x => [x.id, x]));
       statsDispo = true;
     } catch {}
   }
   function rpc(nom, corps) {
-    return fetch(`${SB_URL}/rest/v1/rpc/${nom}`, { method: 'POST', headers: SB_ENTETES, body: JSON.stringify(corps), keepalive: true });
+    return fetch(`${SB_URL}/rest/v1/rpc/${nom}`, { method: 'POST', keepalive: true,
+      headers: { apikey: SB_CLE, Authorization: `Bearer ${SB_CLE}`, 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
   }
   function compterTelechargement(id) {
     mesTelechargements[id] = new Date().toISOString(); ecrireLocal('entarsh-catalogue-telechargements', mesTelechargements);
@@ -59,15 +61,126 @@
     rpc('catalogue_compter', { p_id: id, p_type: 'vue' }).catch(() => {});
   }
   async function basculerLike(id) {
+    if (!compte) { ouvrirCompte("Connecte-toi ou crée un compte pour mettre un J'aime."); return false; }
     const aime = !mesLikes.has(id);
     aime ? mesLikes.add(id) : mesLikes.delete(id);
-    ecrireLocal('entarsh-catalogue-likes', [...mesLikes]);
     (stats[id] ||= { id, telechargements: 0, likes: 0, vues: 0 }).likes = Math.max(0, stat(id, 'likes') + (aime ? 1 : -1));
-    try {
-      const r = await rpc('catalogue_aimer', { p_id: id, p_visiteur: visiteur, p_aime: aime });
-      if (r.ok) stats[id].likes = await r.json();
-    } catch {}
+    const { data, error } = await sb.rpc('catalogue_aimer', { p_id: id, p_aime: aime });
+    if (error) {                                   // annuler en cas d'échec
+      aime ? mesLikes.delete(id) : mesLikes.add(id);
+      stats[id].likes = Math.max(0, stat(id, 'likes') + (aime ? -1 : 1));
+      if (/non_connecte|JWT/i.test(error.message)) { await deconnecter(); ouvrirCompte('Ta session a expiré, reconnecte-toi.'); }
+      return false;
+    }
+    stats[id].likes = data;
+    return true;
   }
+
+  // ---------- Comptes ----------
+  async function chargerCompte() {
+    const { data: { session: s } } = await sb.auth.getSession();
+    if (!s) { compte = null; mesLikes = new Set(); majBoutonCompte(); return; }
+    const { data, error } = await sb.rpc('catalogue_moi');
+    compte = !error && data ? data : null;
+    mesLikes = new Set(compte?.likes || []);
+    if (!compte && !error) await sb.auth.signOut();   // session sans profil catalogue
+    majBoutonCompte();
+  }
+  async function deconnecter() {
+    await sb.auth.signOut().catch(() => {});
+    compte = null; mesLikes = new Set(); session = null;
+    majBoutonCompte(); afficher(); rafraichirFiche();
+  }
+  function initiale(p) { return (p || '?').charAt(0).toUpperCase(); }
+  function majBoutonCompte() {
+    const b = $('bouton-compte');
+    b.classList.toggle('connecte', !!compte);
+    b.querySelector('.avatar-compte').textContent = compte ? initiale(compte.pseudo) : '';
+    b.querySelector('.nom-compte').textContent = compte ? compte.pseudo : 'Se connecter';
+    $('ouvrir-gestion').hidden = !estGerant();
+  }
+  function rafraichirFiche() {
+    const h = decodeURIComponent(location.hash.slice(1));
+    if (h.startsWith('element/')) { const e = catalogue.elements.find(x => x.id === h.slice(8)); if (e) majStatsFiche(e); }
+  }
+
+  let modeCompte = 'connexion';
+  function modeFormulaire(m) {
+    modeCompte = m;
+    document.querySelectorAll('.compte-bascule .p-onglet').forEach(b => b.setAttribute('aria-selected', String(b.dataset.mode === m)));
+    $('cp-bloc-mdp2').hidden = m !== 'creation';
+    $('cp-aide-pseudo').hidden = m !== 'creation';
+    $('cp-mdp').autocomplete = m === 'creation' ? 'new-password' : 'current-password';
+    $('cp-valider').textContent = m === 'creation' ? 'Créer mon compte' : 'Se connecter';
+    statut('cp-statut', '');
+  }
+  document.querySelectorAll('.compte-bascule .p-onglet').forEach(b => b.addEventListener('click', () => modeFormulaire(b.dataset.mode)));
+
+  function ouvrirCompte(raison) {
+    const d = $('fenetre-compte');
+    $('compte-hors-ligne').hidden = !!compte;
+    $('compte-en-ligne').hidden = !compte;
+    $('compte-titre').textContent = compte ? 'Mon compte' : 'Compte Entarsh Catalogue';
+    $('compte-raison').hidden = !raison; $('compte-raison').textContent = raison || '';
+    if (compte) {
+      $('cp-nom').textContent = compte.pseudo;
+      $('cp-rang').textContent = compte.rang === 'gerant' ? 'Gérant' : 'Membre';
+      $('fenetre-compte').querySelector('#compte-en-ligne .avatar-compte').textContent = initiale(compte.pseudo);
+      const n = mesLikes.size;
+      $('cp-likes').textContent = n ? `Tu as aimé ${n} élément${n > 1 ? 's' : ''}.` : "Tu n'as encore aimé aucun élément.";
+    } else {
+      modeFormulaire(modeCompte);
+      $('cp-mdp').value = ''; $('cp-mdp2').value = '';
+    }
+    if (!d.open) d.showModal();
+    if (!compte) setTimeout(() => $('cp-pseudo').focus(), 30);
+  }
+  $('bouton-compte').addEventListener('click', () => ouvrirCompte());
+  $('fermer-compte').addEventListener('click', () => $('fenetre-compte').close());
+  $('fenetre-compte').addEventListener('click', e => { if (e.target === $('fenetre-compte')) $('fenetre-compte').close(); });
+  $('cp-deconnexion').addEventListener('click', async () => { await deconnecter(); $('fenetre-compte').close(); });
+
+  const MESSAGES_SB = {
+    pseudo_pris: 'Ce pseudo est déjà pris.', pseudo_invalide: 'Pseudo invalide : 3 à 20 caractères (lettres sans accent, chiffres, - ou _).',
+  };
+  $('form-compte').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const pseudo = $('cp-pseudo').value.trim(), mdp = $('cp-mdp').value;
+    if (!/^[A-Za-z0-9_-]{3,20}$/.test(pseudo)) return statut('cp-statut', MESSAGES_SB.pseudo_invalide, 'erreur');
+    if (mdp.length < 8) return statut('cp-statut', 'Le mot de passe doit faire au moins 8 caractères.', 'erreur');
+    if (modeCompte === 'creation' && mdp !== $('cp-mdp2').value) return statut('cp-statut', 'Les deux mots de passe ne sont pas identiques.', 'erreur');
+    const bouton = $('cp-valider'), texte = bouton.textContent;
+    bouton.disabled = true; bouton.replaceChildren(chargeur(), modeCompte === 'creation' ? ' Création…' : ' Connexion…');
+    try {
+      if (modeCompte === 'creation') {
+        const libre = await sb.rpc('catalogue_pseudo_libre', { p_pseudo: pseudo });
+        if (libre.error) throw new Error('Le serveur des comptes ne répond pas. Réessaie plus tard.');
+        if (!libre.data) throw new Error(MESSAGES_SB.pseudo_pris);
+        await sb.auth.signOut().catch(() => {});
+        const hasard = [...crypto.getRandomValues(new Uint8Array(4))].map(x => x.toString(16).padStart(2, '0')).join('');
+        const email = `cat-${pseudo.toLowerCase()}.${hasard}@${DOMAINE_LOGIN}`;
+        const ins = await sb.auth.signUp({ email, password: mdp });
+        if (ins.error) throw new Error(/rate|too many/i.test(ins.error.message) ? 'Trop de créations de compte : réessaie dans un moment.' : 'La création du compte a échoué. Réessaie.');
+        if (!ins.data.session) { const c = await sb.auth.signInWithPassword({ email, password: mdp }); if (c.error) throw new Error("Le compte n'a pas pu être activé."); }
+        const r = await sb.rpc('catalogue_creer_profil', { p_pseudo: pseudo });
+        if (r.error) { await sb.auth.signOut().catch(() => {}); throw new Error(MESSAGES_SB[(r.error.message.match(/pseudo_\w+/) || [])[0]] || 'La création du compte a échoué.'); }
+      } else {
+        const r = await sb.rpc('catalogue_email', { p_pseudo: pseudo });
+        if (r.error) throw new Error('Le serveur des comptes ne répond pas. Réessaie plus tard.');
+        if (!r.data) throw new Error('Pseudo inconnu. Crée d\'abord ton compte.');
+        const c = await sb.auth.signInWithPassword({ email: r.data, password: mdp });
+        if (c.error) throw new Error(/rate|too many/i.test(c.error.message) ? "Trop d'essais : attends quelques minutes." : 'Mot de passe incorrect.');
+      }
+      await chargerCompte();
+      if (!compte) throw new Error('Connexion impossible pour le moment.');
+      afficher(); rafraichirFiche();
+      ouvrirCompte();
+      statut('cp-statut', '');
+    } catch (err) { statut('cp-statut', err.message, 'erreur'); }
+    finally { bouton.disabled = false; bouton.textContent = texte; }
+  });
+  sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' && compte) { compte = null; mesLikes = new Set(); majBoutonCompte(); } });
+
 
   // ---------- Utilitaires ----------
   function el(balise, attrs = {}, ...enfants) {
@@ -127,7 +240,7 @@
   async function charger() {
     $('etat').replaceChildren(chargeur(true), el('span', {}, 'Chargement du catalogue…'));
     const lire = async f => { const r = await fetch(f, { cache: 'no-cache' }); if (!r.ok) throw new Error(r.status); return r.json(); };
-    const [cat, inf] = await Promise.allSettled([lire('catalogue.json'), lire('site.json'), chargerStats()]);
+    const [cat, inf] = await Promise.allSettled([lire('catalogue.json'), lire('site.json'), chargerStats(), chargerCompte()]);
     if (inf.status === 'fulfilled') site = { ...site, ...inf.value };
     afficherSite();
     if (cat.status !== 'fulfilled') { $('etat').textContent = 'Impossible de charger le catalogue.'; return; }
@@ -358,7 +471,7 @@
 
     const aime = mesLikes.has(e.id);
     const boutonAime = el('button', { type: 'button', class: 'bouton-contour bouton-aime' + (aime ? ' actif' : ''), 'aria-pressed': String(aime),
-      onclick: async () => { await basculerLike(e.id); majStatsFiche(e); afficher(); } }, icone('pouce'), el('span', {}, aime ? "J'aime déjà" : "J'aime"));
+      onclick: async () => { if (await basculerLike(e.id)) { majStatsFiche(e); afficher(); } } }, icone('pouce'), el('span', {}, aime ? "J'aime déjà" : "J'aime"));
 
     zone.replaceChildren(
       el('nav', { class: 'fil-ariane', 'aria-label': "Fil d'Ariane" },
@@ -473,8 +586,7 @@
   const urlApi = chemin => { const r = reglages(); return `https://api.github.com/repos/${r.proprio}/${r.depot}/contents/${encoderChemin(chemin)}`; };
   function entetes() {
     const r = reglages();
-    if (!r.jeton) throw new Error('La gestion est verrouillée : reconnecte-toi.');
-    activite();
+    if (!r.jeton) throw new Error('Gestion non connectée à GitHub.');
     return { Authorization: `Bearer ${r.jeton}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
   }
   function erreurGitHub(status, message) {
@@ -555,28 +667,6 @@
   const dialogue = $('gestion');
   let fichierChoisi = null, imageChoisie = null, imageRetiree = false;
 
-  // ---------- Coffre : chiffrement du jeton avec le mot de passe (WebCrypto) ----------
-  const b64 = o => btoa(String.fromCharCode(...new Uint8Array(o)));
-  const deB64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
-  async function cleDepuis(mdp, sel) {
-    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(mdp), 'PBKDF2', false, ['deriveKey']);
-    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: sel, iterations: 310000, hash: 'SHA-256' },
-      base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-  }
-  function coffre() {
-    try { return JSON.parse(localStorage.getItem(CLE_COFFRE)); } catch { return null; }
-  }
-  async function enfermer(infos, jeton, mdp) {
-    const sel = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
-    const chiffre = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await cleDepuis(mdp, sel), new TextEncoder().encode(jeton));
-    localStorage.setItem(CLE_COFFRE, JSON.stringify({ ...infos, sel: b64(sel), iv: b64(iv), chiffre: b64(chiffre) }));
-  }
-  async function ouvrir(mdp) {
-    const c = coffre();
-    const clair = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: deB64(c.iv) }, await cleDepuis(mdp, deB64(c.sel)), deB64(c.chiffre));
-    return { proprio: c.proprio, depot: c.depot, branche: c.branche, login: c.login, jeton: new TextDecoder().decode(clair) };
-  }
-
   // Vérifie le jeton auprès de GitHub : valide, et droit d'écriture sur ce dépôt précis
   async function verifierJeton(jeton, proprio, depot) {
     const h = { Authorization: `Bearer ${jeton}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
@@ -591,104 +681,67 @@
     return login;
   }
 
-  // ---------- Verrouillage automatique ----------
-  let minuteur = null;
-  function activite() {
-    if (!session) return;
-    clearTimeout(minuteur);
-    minuteur = setTimeout(() => verrouiller('Gestion verrouillée après 30 minutes sans activité.'), DELAI_VERROU);
-  }
-  function verrouiller(message) {
-    session = null;
-    clearTimeout(minuteur);
-    afficherPanneau();
-    if (message) statut('d-statut', message, 'erreur');
-  }
-  dialogue.addEventListener('input', activite);
-  dialogue.addEventListener('click', activite);
-
-  // ---------- Affichage du panneau selon l'état de connexion ----------
+  // ---------- Affichage du panneau ----------
   function ongletPanneau(nom) {
-    document.querySelectorAll('.p-onglet').forEach(b => b.setAttribute('aria-selected', String(b.dataset.panneau === nom)));
-    document.querySelectorAll('.p-vue').forEach(v => { v.hidden = v.dataset.panneau !== nom; });
+    dialogue.querySelectorAll('.p-onglet').forEach(b => b.setAttribute('aria-selected', String(b.dataset.panneau === nom)));
+    dialogue.querySelectorAll('.p-vue').forEach(v => { v.hidden = v.dataset.panneau !== nom; });
   }
-  document.querySelectorAll('.p-onglet').forEach(b => b.addEventListener('click', () => ongletPanneau(b.dataset.panneau)));
+  dialogue.querySelectorAll('.p-onglet').forEach(b => b.addEventListener('click', () => ongletPanneau(b.dataset.panneau)));
 
   function afficherPanneau() {
-    const connecte = !!session, c = coffre();
-    $('panneau-onglets').hidden = !connecte;
-    $('verrouiller').hidden = !connecte;
-    $('etat-connexion').textContent = connecte ? `Connecté en tant que ${session.login} · ${session.proprio}/${session.depot}`
-      : c ? 'Verrouillé' : 'Non connecté';
-    $('etat-connexion').classList.toggle('ok', connecte);
-    if (connecte) {
-      ongletPanneau('element');
-      remplirTypes(); listeGestion(); listeActusGestion();
-      return;
-    }
+    const relie = !!session;
+    $('panneau-onglets').hidden = !relie;
+    $('changer-jeton').hidden = !relie;
+    $('etat-connexion').textContent = relie ? `${compte.pseudo} (gérant) · GitHub ${session.proprio}/${session.depot}` : `${compte?.pseudo || ''} (gérant) · GitHub non relié`;
+    $('etat-connexion').classList.toggle('ok', relie);
+    if (relie) { ongletPanneau('element'); remplirTypes(); listeGestion(); listeActusGestion(); return; }
     ongletPanneau('connexion');
-    $('form-deverrouiller').hidden = !c;
-    $('form-connexion').hidden = !!c;
-    if (c) $('d-info').textContent = `Connexion enregistrée sur cet appareil pour ${c.login} (${c.proprio}/${c.depot}). Entre ton mot de passe pour continuer.`;
-    for (const id of ['d-mdp', 'c-jeton', 'c-mdp', 'c-mdp2']) $(id).value = '';
+    $('c-jeton').value = '';
   }
 
-  $('ouvrir-gestion').addEventListener('click', () => {
+  // Récupère le jeton GitHub rangé dans Supabase (réservé au gérant)
+  async function chargerJeton() {
+    const { data, error } = await sb.rpc('catalogue_jeton_lire');
+    if (error) throw new Error(/reserve_gerant/.test(error.message) ? 'Réservé au gérant.' : 'Impossible de joindre la base du site.');
+    if (!data) return null;
+    let infos; try { infos = JSON.parse(data); } catch { infos = { jeton: data }; }
+    return { proprio: 'entarsh-studio', depot: 'entarsh-studio.github.io', branche: 'main', ...infos };
+  }
+
+  $('ouvrir-gestion').addEventListener('click', async () => {
+    if (!estGerant()) return;
+    statut('c-statut', '');
+    const btn = $('ouvrir-gestion');
+    if (!session) {
+      btn.disabled = true;
+      try {
+        const infos = await chargerJeton();
+        if (infos) { infos.login = await verifierJeton(infos.jeton, infos.proprio, infos.depot); session = infos; }
+      } catch (err) { afficherPanneau(); dialogue.showModal(); statut('c-statut', err.message + ' Enregistre un nouveau jeton.', 'erreur'); btn.disabled = false; return; }
+      btn.disabled = false;
+    }
     afficherPanneau();
-    statut('d-statut', ''); statut('c-statut', '');
     dialogue.showModal();
-    (session ? null : $(coffre() ? 'd-mdp' : 'c-jeton'))?.focus();
   });
   $('fermer-gestion').addEventListener('click', () => dialogue.close());
   dialogue.addEventListener('click', e => { if (e.target === dialogue) dialogue.close(); });
-  $('verrouiller').addEventListener('click', () => verrouiller());
+  $('changer-jeton').addEventListener('click', () => { session = null; afficherPanneau(); $('c-jeton').focus(); });
 
-  // Première connexion
   $('form-connexion').addEventListener('submit', async ev => {
     ev.preventDefault();
-    const jeton = $('c-jeton').value.trim(), mdp = $('c-mdp').value;
+    const jeton = $('c-jeton').value.trim();
     const infos = { proprio: $('gh-proprio').value.trim(), depot: $('gh-depot').value.trim(), branche: $('gh-branche').value.trim() || 'main' };
-    if (mdp !== $('c-mdp2').value) return statut('c-statut', 'Les deux mots de passe ne sont pas identiques.', 'erreur');
-    if (mdp.length < 8) return statut('c-statut', 'Mot de passe trop court (8 caractères minimum).', 'erreur');
-    if (/^gh[pousr]_/.test(jeton)) return statut('c-statut', 'Ce jeton est un jeton « classique », qui donne accès à tout ton compte. Crée plutôt un jeton fine-grained limité au dépôt du site.', 'erreur');
+    if (/^gh[pousr]_/.test(jeton)) return statut('c-statut', 'Ce jeton est un jeton « classique », qui donne accès à tout ton compte GitHub. Crée plutôt un jeton fine-grained limité au dépôt du site.', 'erreur');
     const bouton = $('c-valider');
     bouton.disabled = true; bouton.replaceChildren(chargeur(), ' Vérification…');
     try {
-      infos.login = await verifierJeton(jeton, infos.proprio, infos.depot);
-      await enfermer(infos, jeton, mdp);
-      session = { ...infos, jeton };
-      activite();
+      const login = await verifierJeton(jeton, infos.proprio, infos.depot);
+      const { error } = await sb.rpc('catalogue_jeton_ecrire', { p_jeton: JSON.stringify({ ...infos, jeton }) });
+      if (error) throw new Error(/reserve_gerant/.test(error.message) ? 'Réservé au gérant.' : "Le jeton est valide mais n'a pas pu être enregistré.");
+      session = { ...infos, jeton, login };
       afficherPanneau();
     } catch (err) { statut('c-statut', err.message, 'erreur'); }
-    finally { bouton.disabled = false; bouton.textContent = 'Vérifier et se connecter'; }
-  });
-
-  // Déverrouillage (avec pause après 5 essais ratés)
-  let essaisRates = 0, bloqueJusqua = 0;
-  $('form-deverrouiller').addEventListener('submit', async ev => {
-    ev.preventDefault();
-    if (Date.now() < bloqueJusqua) return statut('d-statut', `Trop d'essais. Réessaie dans ${Math.ceil((bloqueJusqua - Date.now()) / 1000)} s.`, 'erreur');
-    const bouton = $('d-valider');
-    bouton.disabled = true; bouton.replaceChildren(chargeur(), ' Déverrouillage…');
-    try {
-      let s;
-      try { s = await ouvrir($('d-mdp').value); }
-      catch {
-        if (++essaisRates >= 5) { essaisRates = 0; bloqueJusqua = Date.now() + 30000; }
-        throw new Error('Mot de passe incorrect.');
-      }
-      essaisRates = 0;
-      await verifierJeton(s.jeton, s.proprio, s.depot).catch(e => { throw new Error(e.message + ' Utilise un autre jeton.'); });
-      session = s;
-      activite();
-      afficherPanneau();
-    } catch (err) { statut('d-statut', err.message, 'erreur'); }
-    finally { bouton.disabled = false; bouton.textContent = 'Déverrouiller'; }
-  });
-  $('d-oublier').addEventListener('click', () => {
-    if (!confirm('Effacer la connexion enregistrée sur cet appareil ?')) return;
-    localStorage.removeItem(CLE_COFFRE);
-    verrouiller();
+    finally { bouton.disabled = false; bouton.textContent = 'Vérifier et enregistrer'; }
   });
 
   function remplirTypes() {
