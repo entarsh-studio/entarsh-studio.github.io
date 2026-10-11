@@ -6,5 +6,102 @@
   "Logiciel",
   "Outil"
  ],
- "elements": []
+ "elements": [
+  {
+   "id": "ex1",
+   "nom": "Exemple — Pixel Runner",
+   "type": "Jeu vidéo",
+   "version": "1.2.0",
+   "auteur": "Entarsh Studio",
+   "description": "Exemple de jeu de plateforme : cours, saute et évite les pièges dans un monde en pixels. (Fichier de démonstration.)",
+   "fichier": {
+    "chemin": "fichiers/exemple-ex1/Pixel-Runner.zip",
+    "nom": "Pixel-Runner.zip",
+    "taille": 1391
+   },
+   "image": "images/ex1.png",
+   "ajoute_le": "2026-10-11T06:30:00Z",
+   "modifie_le": "2026-10-11T06:30:00Z"
+  },
+  {
+   "id": "ex2",
+   "nom": "Exemple — Éditeur de niveaux",
+   "type": "Éditeur",
+   "version": "0.9.1",
+   "auteur": "Entarsh Studio",
+   "description": "Exemple d'éditeur : crée tes propres niveaux, place les blocs et teste-les directement. (Fichier de démonstration.)",
+   "fichier": {
+    "chemin": "fichiers/exemple-ex2/Editeur-de-niveaux.zip",
+    "nom": "Editeur-de-niveaux.zip",
+    "taille": 2384
+   },
+   "image": "images/ex2.png",
+   "ajoute_le": "2026-10-10T13:30:00Z",
+   "modifie_le": "2026-10-10T13:30:00Z"
+  },
+  {
+   "id": "ex3",
+   "nom": "Exemple — Convertisseur d'images",
+   "type": "Outil",
+   "version": "2.0",
+   "auteur": "Entarsh Studio",
+   "description": "Exemple d'outil qui convertit des images entre PNG, JPEG et WebP en un clic. (Fichier de démonstration.)",
+   "fichier": {
+    "chemin": "fichiers/exemple-ex3/Convertisseur-dimages.zip",
+    "nom": "Convertisseur-dimages.zip",
+    "taille": 3423
+   },
+   "image": "images/ex3.png",
+   "ajoute_le": "2026-10-10T03:30:00Z",
+   "modifie_le": "2026-10-10T03:30:00Z"
+  },
+  {
+   "id": "ex4",
+   "nom": "Exemple — Bloc-notes Entarsh",
+   "type": "Logiciel",
+   "version": "1.0.3",
+   "auteur": "Entarsh Studio",
+   "description": "Exemple de logiciel : un bloc-notes simple avec thème sombre et sauvegarde automatique. (Fichier de démonstration.)",
+   "fichier": {
+    "chemin": "fichiers/exemple-ex4/Bloc-notes-Entarsh.zip",
+    "nom": "Bloc-notes-Entarsh.zip",
+    "taille": 4375
+   },
+   "image": "images/ex4.png",
+   "ajoute_le": "2026-10-09T05:30:00Z",
+   "modifie_le": "2026-10-09T05:30:00Z"
+  },
+  {
+   "id": "ex5",
+   "nom": "Exemple — Space Cubes",
+   "type": "Jeu vidéo",
+   "version": "0.4.0",
+   "auteur": "Entarsh Studio",
+   "description": "Exemple de jeu d'arcade : pilote un vaisseau entre des cubes de couleur qui s'allument. (Fichier de démonstration.)",
+   "fichier": {
+    "chemin": "fichiers/exemple-ex5/Space-Cubes.zip",
+    "nom": "Space-Cubes.zip",
+    "taille": 5356
+   },
+   "image": "images/ex5.png",
+   "ajoute_le": "2026-10-08T06:30:00Z",
+   "modifie_le": "2026-10-08T06:30:00Z"
+  },
+  {
+   "id": "ex6",
+   "nom": "Exemple — Éditeur de sprites",
+   "type": "Éditeur",
+   "version": "1.1",
+   "auteur": "Entarsh Studio",
+   "description": "Exemple d'éditeur de dessins en pixels pour créer les personnages et objets de tes jeux. (Fichier de démonstration.)",
+   "fichier": {
+    "chemin": "fichiers/exemple-ex6/Editeur-de-sprites.zip",
+    "nom": "Editeur-de-sprites.zip",
+    "taille": 6344
+   },
+   "image": "images/ex6.png",
+   "ajoute_le": "2026-10-06T09:30:00Z",
+   "modifie_le": "2026-10-06T09:30:00Z"
+  }
+ ]
 }
