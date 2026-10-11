@@ -179,13 +179,47 @@
     }));
   }
 
+  // ---------- Actualités ----------
+  const MOIS_COURTS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  function ilYA(dateTexte) {
+    const d = new Date(dateTexte.length === 10 ? dateTexte + 'T12:00:00' : dateTexte);
+    const jours = Math.round((new Date().setHours(12, 0, 0, 0) - new Date(d).setHours(12, 0, 0, 0)) / 864e5);
+    if (isNaN(jours)) return '';
+    if (jours <= 0) return "aujourd'hui";
+    if (jours === 1) return 'hier';
+    if (jours < 7) return `il y a ${jours} jours`;
+    if (jours < 31) { const s = Math.round(jours / 7); return `il y a ${s} semaine${s > 1 ? 's' : ''}`; }
+    if (jours < 365) return `il y a ${Math.round(jours / 30)} mois`;
+    const a = Math.round(jours / 365); return `il y a ${a} an${a > 1 ? 's' : ''}`;
+  }
+  function carteActu(a, i) {
+    const d = new Date((a.date || '').length === 10 ? a.date + 'T12:00:00' : a.date);
+    const recente = (Date.now() - d) / 864e5 < 7;
+    const longue = (a.texte || '').length > 260;
+    const art = el('article', { class: 'actu' + (i === 0 ? ' une' : '') + (longue ? ' repliee' : ''),
+      style: `--couleur:${COULEURS[(i * 5 + 5) % COULEURS.length]};--i:${Math.min(i, 8)}` });
+    const plus = longue ? el('button', { type: 'button', class: 'actu-plus',
+      onclick: () => { plus.textContent = art.classList.toggle('repliee') ? 'Lire la suite' : 'Réduire'; } }, 'Lire la suite') : null;
+    art.append(
+      el('time', { class: 'actu-date', datetime: a.date, title: dateLisible(a.date) },
+        el('strong', {}, isNaN(d) ? '?' : String(d.getDate())), el('span', {}, isNaN(d) ? '' : MOIS_COURTS[d.getMonth()])),
+      el('div', { class: 'actu-corps' },
+        el('div', { class: 'actu-meta' },
+          i === 0 ? el('span', { class: 'actu-une' }, 'À la une') : null,
+          recente ? el('span', { class: 'actu-nouveau' }, 'Nouveau') : null,
+          el('span', {}, `${dateLisible(a.date)} · ${ilYA(a.date)}`)),
+        el('h3', {}, a.titre),
+        el('p', {}, a.texte),
+        plus));
+    return art;
+  }
+
   // ---------- Actualités & mises à jour ----------
   function afficherSite() {
     $('version-site').textContent = site.version || '—';
     const actus = [...(site.actualites || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    $('liste-actus').replaceChildren(...(actus.length ? actus.map(a => el('article', { class: 'actu' },
-      el('time', { datetime: a.date }, dateLisible(a.date)), el('h3', {}, a.titre), el('p', {}, a.texte)))
-      : [el('p', { class: 'etat' }, 'Aucune actualité pour le moment.')]));
+    $('liste-actus').replaceChildren(...(actus.length ? actus.map(carteActu)
+      : [el('div', { class: 'actus-vide' }, chargeur(true), el('span', {}, 'Aucune actualité pour le moment.'))]));
     afficherMisesAJour();
     listeActusGestion();
   }

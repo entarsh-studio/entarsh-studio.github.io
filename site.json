@@ -1,5 +1,5 @@
 {
- "version": "0.3.3",
+ "version": "0.3.4",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,20 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.3.4",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "amelioration",
+     "texte": "Onglet Actualités repensé : actualité à la une, pavé de date, mention « Nouveau », date relative et « Lire la suite » pour les textes longs"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Retour de l'animation d'arrivée dans l'onglet Mises à jour"
+    }
+   ]
+  },
   {
    "version": "0.3.3",
    "date": "2026-10-11",
