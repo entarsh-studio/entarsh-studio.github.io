@@ -54,7 +54,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=0.8.0">
+<link rel="stylesheet" href="style.css?v=0.9.0">
 </head>
 <body>
 <canvas id="fond" aria-hidden="true"></canvas>
@@ -130,6 +130,10 @@
       <select id="choix-fond">
         <option value="carres">Carrés lumineux</option>
         <option value="tetris">Tetris</option>
+        <option value="flappy">Flappy Bird</option>
+        <option value="snake">Snake</option>
+        <option value="vie">Jeu de la vie</option>
+        <option value="pluie">Pluie de carrés</option>
       </select>
     </label>
 
@@ -241,14 +245,14 @@
       <label>Auteur<input id="f-auteur" maxlength="40" placeholder="Entarsh Studio"></label>
       <label>Description<textarea id="f-description" rows="3" maxlength="600"></textarea></label>
 
-      <div id="depot" class="depot" tabindex="0" role="button" aria-label="Choisir le fichier">
-        <input id="f-fichier" type="file" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-        <p id="depot-texte"><b>Glisser le fichier ici</b> ou cliquer pour choisir</p>
+      <div class="versions-bloc">
+        <div class="images-sec-tete">
+          <span>Téléchargements <small>(une version par plateforme : Windows, Linux, macOS…)</small></span>
+          <button type="button" id="ajouter-version" class="bouton-secondaire">+ Ajouter une version</button>
+        </div>
+        <div id="liste-versions" class="liste-versions"></div>
+        <p class="aide">Fichiers de 50 Mo maximum. Au-delà, colle un lien externe (GitHub Releases, Google Drive…).</p>
       </div>
-      <label>…ou lien externe <small>(fichiers de plus de 50 Mo : GitHub Releases, Google Drive…)</small>
-        <input id="f-lien" type="url" placeholder="https://github.com/…/releases/download/…">
-      </label>
 
       <div class="choix-image">
         <span id="apercu-image" class="apercu-image"></span>
@@ -373,7 +377,7 @@
 </dialog>
 
 <script src="supabase.js?v=2"></script>
-<script src="fond.js?v=0.8.0"></script>
-<script src="app.js?v=0.8.0"></script>
+<script src="fond.js?v=0.9.0"></script>
+<script src="app.js?v=0.9.0"></script>
 </body>
 </html>

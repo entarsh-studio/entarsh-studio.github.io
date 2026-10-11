@@ -27,6 +27,38 @@
     "images/ex1-capture2.png",
     "images/ex1-capture3.png",
     "images/ex1-capture4.png"
+   ],
+   "telechargements": [
+    {
+     "id": "ex1-windows",
+     "plateforme": "windows",
+     "libelle": "Jouer sur Windows",
+     "fichier": {
+      "chemin": "fichiers/exemple-ex1/Pixel-Runner.zip",
+      "nom": "Pixel-Runner.zip",
+      "taille": 1391
+     }
+    },
+    {
+     "id": "ex1-linux",
+     "plateforme": "linux",
+     "libelle": "",
+     "fichier": {
+      "chemin": "fichiers/exemple-ex1/Pixel-Runner.zip",
+      "nom": "Pixel-Runner.zip",
+      "taille": 1391
+     }
+    },
+    {
+     "id": "ex1-macos",
+     "plateforme": "macos",
+     "libelle": "",
+     "fichier": {
+      "chemin": "fichiers/exemple-ex1/Pixel-Runner.zip",
+      "nom": "Pixel-Runner.zip",
+      "taille": 1391
+     }
+    }
    ]
   },
   {
@@ -48,6 +80,28 @@
     "images/ex2-capture1.png",
     "images/ex2-capture2.png",
     "images/ex2-capture3.png"
+   ],
+   "telechargements": [
+    {
+     "id": "ex2-windows",
+     "plateforme": "windows",
+     "libelle": "",
+     "fichier": {
+      "chemin": "fichiers/exemple-ex2/Editeur-de-niveaux.zip",
+      "nom": "Editeur-de-niveaux.zip",
+      "taille": 2384
+     }
+    },
+    {
+     "id": "ex2-linux",
+     "plateforme": "linux",
+     "libelle": "",
+     "fichier": {
+      "chemin": "fichiers/exemple-ex2/Editeur-de-niveaux.zip",
+      "nom": "Editeur-de-niveaux.zip",
+      "taille": 2384
+     }
+    }
    ]
   },
   {
@@ -112,6 +166,48 @@
     "images/ex5-capture3.png",
     "images/ex5-capture4.png",
     "images/ex5-capture5.png"
+   ],
+   "telechargements": [
+    {
+     "id": "ex5-windows",
+     "plateforme": "windows",
+     "libelle": "",
+     "fichier": {
+      "chemin": "fichiers/exemple-ex5/Space-Cubes.zip",
+      "nom": "Space-Cubes.zip",
+      "taille": 5356
+     }
+    },
+    {
+     "id": "ex5-android",
+     "plateforme": "android",
+     "libelle": "Obtenir sur Android",
+     "fichier": {
+      "chemin": "fichiers/exemple-ex5/Space-Cubes.zip",
+      "nom": "Space-Cubes.zip",
+      "taille": 5356
+     }
+    },
+    {
+     "id": "ex5-linux",
+     "plateforme": "linux",
+     "libelle": "",
+     "fichier": {
+      "chemin": "fichiers/exemple-ex5/Space-Cubes.zip",
+      "nom": "Space-Cubes.zip",
+      "taille": 5356
+     }
+    },
+    {
+     "id": "ex5-web",
+     "plateforme": "web",
+     "libelle": "",
+     "fichier": {
+      "chemin": "fichiers/exemple-ex5/Space-Cubes.zip",
+      "nom": "Space-Cubes.zip",
+      "taille": 5356
+     }
+    }
    ]
   },
   {

@@ -39,7 +39,7 @@
     try {
       let { data, error } = await sb.from('catalogue_stats').select('id,telechargements,likes,vues,commentaires');
       if (error) ({ data, error } = await sb.from('catalogue_stats').select('id,telechargements,likes,vues'));
-      if (error) return;
+      if (error || !Array.isArray(data)) return;
       stats = Object.fromEntries(data.map(x => [x.id, x]));
       statsDispo = true;
     } catch {}
@@ -361,8 +361,8 @@
     $('etat').replaceChildren(chargeur(true), el('span', {}, 'Chargement du catalogue…'));
     const lireJson = async f => { const r = await fetch(f, { cache: 'no-cache' }); if (!r.ok) throw new Error(r.status); return r.json(); };
     const [inf, elems, actus] = await Promise.allSettled([lireJson('site.json'),
-      sb.from('catalogue_elements').select('data').then(r => { if (r.error) throw r.error; return r.data; }),
-      sb.from('catalogue_actualites').select('id,date,titre,texte').then(r => { if (r.error) throw r.error; return r.data; }),
+      sb.from('catalogue_elements').select('data').then(r => { if (r.error || !Array.isArray(r.data)) throw r.error || new Error('vide'); return r.data; }),
+      sb.from('catalogue_actualites').select('id,date,titre,texte').then(r => { if (r.error || !Array.isArray(r.data)) throw r.error || new Error('vide'); return r.data; }),
       chargerStats(), chargerCompte()]);
     if (inf.status === 'fulfilled') site = { ...site, ...inf.value };
     if (elems.status === 'fulfilled') {           // contenu géré depuis le site
@@ -519,22 +519,49 @@
       el('div', { class: 'carte-pied' },
         el('span', { title: "J'aime", class: mesLikes.has(e.id) ? 'aime' : null }, icone('pouce'), statsDispo ? String(stat(e.id, 'likes')) : '—'),
         el('span', { title: 'Téléchargements' }, icone('telecharger'), statsDispo ? String(stat(e.id, 'telechargements')) : '—'),
-        f.taille ? el('span', { title: 'Taille' }, icone('disque'), tailleLisible(f.taille)) : (f.url ? el('span', {}, icone('disque'), 'Lien externe') : null)));
+        piedVersions(e)));
+  }
+
+  // ---------- Versions de téléchargement (Windows, Linux…) ----------
+  const PLATEFORMES = { windows: 'Windows', linux: 'Linux', macos: 'macOS', android: 'Android', ios: 'iOS', web: 'Web', autre: 'Autre' };
+  const ICONES_PLATEFORME = {
+    windows: 'M3 5.5 10.5 4.5v7H3zM12.5 4.2 21 3v8.5h-8.5zM3 12.5h7.5v7L3 18.5zM12.5 12.5H21V21l-8.5-1.2z',
+    linux: 'M4 5h16v14H4zM7.5 9.5l3 2.5-3 2.5M12.5 15h4',
+    macos: 'M5 5h14v10H5zM2.5 18.5h19',
+    android: 'M7 10h10v8H7zM9 10a3 3 0 0 1 6 0M10 7.5 8.5 5.5M14 7.5l1.5-2M10 13h.01M14 13h.01',
+    ios: 'M8 3h8v18H8zM11 18h2',
+    web: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18',
+    autre: 'M12 4v11m0 0-4-4m4 4 4-4M5 20h14',
+  };
+  function iconePlateforme(p) {
+    const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true');
+    sv.classList.add('ic', 'ic-plateforme', 'ic-' + (ICONES_PLATEFORME[p] ? p : 'autre'));
+    const pa = document.createElementNS('http://www.w3.org/2000/svg', 'path'); pa.setAttribute('d', ICONES_PLATEFORME[p] || ICONES_PLATEFORME.autre); sv.append(pa); return sv;
+  }
+  // Les versions d'un élément (les anciens éléments n'ont qu'un fichier)
+  const versionsDe = e => e.telechargements?.length ? e.telechargements
+    : e.fichier ? [{ id: 'principal', plateforme: 'autre', libelle: '', fichier: e.fichier }] : [];
+  const libelleVersion = v => v.libelle?.trim() || (v.plateforme && v.plateforme !== 'autre' ? `Télécharger pour ${PLATEFORMES[v.plateforme] || v.plateforme}` : 'Télécharger');
+  function hrefFichier(f = {}) {
+    return f.stockage ? STOCKAGE_PUBLIC + encoderChemin(f.stockage) + '?download=' + encodeURIComponent(f.nom || '')
+      : f.url || (f.chemin ? encoderChemin(f.chemin) : null);
   }
 
   // ---------- Fiche détaillée d'un élément ----------
-  function lienTelechargement(e) {
-    const f = e.fichier || {};
-    const href = f.stockage ? STOCKAGE_PUBLIC + encoderChemin(f.stockage) + '?download=' + encodeURIComponent(f.nom || '')
-      : f.url || (f.chemin ? encoderChemin(f.chemin) : null);
-    return { f, href };
+  function piedVersions(e) {
+    const vs = versionsDe(e);
+    const plateformes = [...new Set(vs.map(v => v.plateforme).filter(p => p && p !== 'autre'))];
+    if (plateformes.length) return el('span', { class: 'pied-plateformes', title: plateformes.map(p => PLATEFORMES[p]).join(', ') }, ...plateformes.map(iconePlateforme));
+    const f = vs[0]?.fichier || {};
+    return f.taille ? el('span', { title: 'Taille' }, icone('disque'), tailleLisible(f.taille)) : f.url ? el('span', {}, icone('disque'), 'Lien externe') : null;
   }
-  function boutonTelecharger(e, classe, texte) {
-    const { f, href } = lienTelechargement(e);
+  // Bouton de téléchargement d'une version
+  function boutonVersion(e, v, classe) {
+    const f = v.fichier || {}, href = hrefFichier(f);
     if (!href) return null;
     return el('a', { class: classe, href, download: f.url ? null : (f.nom || ''), rel: f.url ? 'noopener' : null, target: f.url ? '_blank' : null,
       onclick: () => { compterTelechargement(e.id); setTimeout(() => { majStatsFiche(e); afficher(); }, 50); } },
-      icone('telecharger'), texte);
+      v.plateforme && v.plateforme !== 'autre' ? iconePlateforme(v.plateforme) : icone('telecharger'), libelleVersion(v));
   }
   function majStatsFiche(e) {
     const zone = document.querySelector('#vue-element .fiche-stats');
@@ -553,7 +580,8 @@
       item('telecharger', 'Téléchargements', v('telechargements')),
       item('oeil', 'Vues', v('vues')),
       item('version', 'Version', e.version ? e.version.replace(/^v/i, '') : '—'),
-      item('disque', 'Taille', e.fichier?.taille ? tailleLisible(e.fichier.taille) : e.fichier?.url ? 'Lien externe' : '—'));
+      versionsDe(e).length > 1 ? item('disque', 'Versions', String(versionsDe(e).length))
+        : item('disque', 'Taille', e.fichier?.taille ? tailleLisible(e.fichier.taille) : e.fichier?.url ? 'Lien externe' : '—'));
   }
   function etatTelechargement(e) {
     const quand = mesTelechargements[e.id];
@@ -625,7 +653,7 @@
     }
     compterVue(e.id);
     const coul = couleurType(e.type);
-    const { f } = lienTelechargement(e);
+    const vs = versionsDe(e);
     let ongletActif = garderOnglet && ficheAffichee?.id === e.id ? ficheAffichee.onglet : 'description';
     const corpsOnglet = el('div', { class: 'fiche-onglet-corps' });
     const onglets = el('div', { class: 'fiche-onglets', role: 'tablist' });
@@ -640,17 +668,20 @@
             (navigator.clipboard?.writeText(url) ?? Promise.reject()).then(() => { ev.target.textContent = 'Lien copié ✓'; setTimeout(() => { ev.target.textContent = 'Partager'; }, 2000); },
               () => prompt('Copie ce lien :', url));
           } }, 'Partager'))),
-      fichiers: () => el('div', { class: 'fiche-fichiers' },
-        el('div', { class: 'fichier-ligne' },
+      fichiers: () => el('div', { class: 'fiche-fichiers' }, ...(vs.length ? vs.map(v => {
+        const f = v.fichier || {};
+        return el('div', { class: 'fichier-ligne' },
+          el('span', { class: 'fichier-plateforme' }, iconePlateforme(v.plateforme)),
           el('div', { class: 'fichier-infos' },
-            el('strong', {}, f.nom || 'Fichier'),
-            el('span', {}, [e.version ? 'Version ' + e.version.replace(/^v/i, '') : null, f.taille ? tailleLisible(f.taille) : f.url ? 'Lien externe' : null,
-              'Mis à jour le ' + dateLisible(e.modifie_le || e.ajoute_le || '')].filter(Boolean).join(' · '))),
-          boutonTelecharger(e, 'bouton-principal', 'Télécharger'))),
+            el('strong', {}, v.plateforme && v.plateforme !== 'autre' ? PLATEFORMES[v.plateforme] : (f.nom || 'Fichier')),
+            el('span', {}, [v.plateforme && v.plateforme !== 'autre' ? f.nom : null, e.version ? 'Version ' + e.version.replace(/^v/i, '') : null,
+              f.taille ? tailleLisible(f.taille) : f.url ? 'Lien externe' : null, 'Mis à jour le ' + dateLisible(e.modifie_le || e.ajoute_le || '')].filter(Boolean).join(' · '))),
+          boutonVersion(e, v, 'bouton-principal'));
+      }) : [el('p', { class: 'aide' }, 'Aucun fichier.')])),
       commentaires: () => blocCommentaires(e, () => montrer('commentaires')),
     };
     const titres = { description: 'Description', fichiers: 'Fichiers', commentaires: 'Commentaires' };
-    const comptes = { fichiers: () => f.nom || f.url ? '1' : '0', commentaires: () => statsDispo && 'commentaires' in (stats[e.id] || { commentaires: 0 }) ? String(stat(e.id, 'commentaires')) : null };
+    const comptes = { fichiers: () => String(vs.length), commentaires: () => statsDispo && 'commentaires' in (stats[e.id] || { commentaires: 0 }) ? String(stat(e.id, 'commentaires')) : null };
     function montrer(nom) {
       ongletActif = nom; ficheAffichee = { id: e.id, onglet: nom };
       onglets.replaceChildren(...Object.keys(contenus).map(k => el('button', { type: 'button', role: 'tab', class: 'fiche-onglet', 'aria-selected': String(k === ongletActif), onclick: () => montrer(k) },
@@ -673,7 +704,10 @@
         el('div', { class: 'fiche-boutons' },
           estGerant() ? el('button', { type: 'button', class: 'bouton-contour', onclick: () => gererElement(e, 'modifier') }, icone('crayon'), 'Modifier') : null,
           estGerant() ? el('button', { type: 'button', class: 'bouton-contour danger', onclick: () => gererElement(e, 'supprimer') }, icone('poubelle'), 'Supprimer') : null,
-          boutonAime, boutonTelecharger(e, 'bouton-principal', 'Télécharger'))),
+          boutonAime,
+          ...vs.slice(0, vs.length > 3 ? 2 : 3).map(v => boutonVersion(e, v, 'bouton-principal')),
+          vs.length > 3 ? el('button', { type: 'button', class: 'bouton-contour', onclick: () => { montrer('fichiers'); onglets.scrollIntoView({ behavior: 'smooth' }); } },
+            icone('telecharger'), `Toutes les versions (${vs.length})`) : null)),
       blocStats(e),
       blocMedia(e, coul),
       el('div', { class: 'fiche-infos' },
@@ -877,11 +911,12 @@
   }
   const erreurGerant = error => new Error(/reserve_gerant/.test(error.message) ? 'Réservé au gérant.' : /JWT|expired/i.test(error.message) ? 'Ta session a expiré, reconnecte-toi.' : `Erreur du serveur : ${error.message}`);
   // Fichiers d'un élément rangés dans le stockage (les anciens fichiers du site ne peuvent pas être supprimés d'ici)
-  const fichiersStockes = e => [e.fichier?.stockage, cheminStockage(e.image), ...(e.images || []).map(cheminStockage)].filter(Boolean);
+  const fichiersStockes = e => [...new Set([e.fichier?.stockage, ...versionsDe(e).map(v => v.fichier?.stockage), cheminStockage(e.image), ...(e.images || []).map(cheminStockage)].filter(Boolean))];
 
   // ---------- Panneau de gestion ----------
   const dialogue = $('gestion');
-  let fichierChoisi = null, imageChoisie = null, imageRetiree = false;
+  let imageChoisie = null, imageRetiree = false;
+  let versionsForm = [];   // [{ cle, plateforme, libelle, existant, fichier: File|null, lien }]
   let imagesSec = [];   // [{ chemin }] déjà publiées ou [{ fichier, url }] à envoyer
   const MAX_IMAGES_SEC = 12;
 
@@ -926,22 +961,49 @@
     $('progression-barre').style.width = part != null ? `${part * 100}%` : '0';
   }
 
-  // Zone de dépôt
-  const depot = $('depot');
-  function choisirFichier(f, texteActuel) {
-    fichierChoisi = f || null;
-    depot.classList.toggle('rempli', !!f);
-    $('depot-texte').replaceChildren(...(f ? [el('b', {}, f.name), ` — ${tailleLisible(f.size)}`]
-      : texteActuel ? [texteActuel] : [el('b', {}, 'Glisser le fichier ici'), ' ou cliquer pour choisir']));
-    if (f && f.size > LIMITE_OCTETS) statut('f-statut', 'Fichier de plus de 50 Mo : mets-le en ligne ailleurs (GitHub Releases, Google Drive…) et colle le lien.', 'erreur');
-    else statut('f-statut', '');
+  // ---------- Versions de téléchargement dans le formulaire ----------
+  const nouvelleVersion = (v = {}) => ({ cle: v.id || nouvelId(), plateforme: v.plateforme || 'autre', libelle: v.libelle || '',
+    existant: v.fichier && !v.fichier.url ? v.fichier : null, fichier: null, lien: v.fichier?.url || '' });
+  function afficherVersions() {
+    $('liste-versions').replaceChildren(...versionsForm.map((v, i) => {
+      const choix = el('select', { 'aria-label': 'Plateforme', onchange: ev => { v.plateforme = ev.target.value; libelle.placeholder = libelleVersion({ ...v, libelle: '' }); icon.replaceChildren(iconePlateforme(v.plateforme)); } },
+        ...Object.entries(PLATEFORMES).map(([k, n]) => el('option', { value: k, ...(k === v.plateforme ? { selected: '' } : {}) }, n)));
+      const libelle = el('input', { value: v.libelle, maxlength: 40, placeholder: libelleVersion({ ...v, libelle: '' }), 'aria-label': 'Texte du bouton',
+        oninput: ev => { v.libelle = ev.target.value; } });
+      const icon = el('span', { class: 'version-icone' }, iconePlateforme(v.plateforme));
+      const entree = el('input', { type: 'file', hidden: '' });
+      const texteDepot = () => v.fichier ? [el('b', {}, v.fichier.name), ` — ${tailleLisible(v.fichier.size)}`]
+        : v.existant ? [`Fichier actuel : ${v.existant.nom || 'fichier'}`, el('small', {}, ' (déposer pour remplacer)')]
+        : [el('b', {}, 'Glisser le fichier ici'), ' ou cliquer'];
+      const zone = el('div', { class: 'depot petit' + (v.fichier ? ' rempli' : ''), tabindex: 0, role: 'button', 'aria-label': 'Choisir le fichier de cette version' },
+        icone('publie'), el('p', {}, ...texteDepot()), entree);
+      const prendre = f => {
+        if (!f) return;
+        if (f.size > LIMITE_OCTETS) { statut('f-statut', `« ${f.name} » dépasse 50 Mo : mets-le en ligne ailleurs et colle le lien.`, 'erreur'); return; }
+        v.fichier = f; v.lien = ''; statut('f-statut', ''); afficherVersions();
+      };
+      zone.addEventListener('click', ev => { if (ev.target !== entree) entree.click(); });
+      zone.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); entree.click(); } });
+      entree.addEventListener('change', () => prendre(entree.files[0]));
+      zone.addEventListener('dragover', ev => { ev.preventDefault(); zone.classList.add('survol'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('survol'));
+      zone.addEventListener('drop', ev => { ev.preventDefault(); zone.classList.remove('survol'); prendre(ev.dataTransfer.files[0]); });
+      const lien = el('input', { type: 'url', value: v.lien, placeholder: '…ou lien externe https://…', 'aria-label': 'Lien externe',
+        oninput: ev => { v.lien = ev.target.value.trim(); if (v.lien && v.fichier) { v.fichier = null; zone.classList.remove('rempli'); zone.querySelector('p').replaceChildren(...texteDepot()); } } });
+      return el('div', { class: 'version-form', style: `--i:${i}` },
+        el('div', { class: 'version-tete' }, icon, choix, libelle,
+          versionsForm.length > 1 ? el('button', { type: 'button', class: 'image-sec-retirer version-retirer', title: 'Retirer cette version', 'aria-label': 'Retirer cette version',
+            onclick: () => { versionsForm.splice(i, 1); afficherVersions(); } }, '✕') : null),
+        zone, lien);
+    }));
   }
-  depot.addEventListener('click', () => $('f-fichier').click());
-  depot.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('f-fichier').click(); } });
-  $('f-fichier').addEventListener('change', e => choisirFichier(e.target.files[0]));
-  depot.addEventListener('dragover', e => { e.preventDefault(); depot.classList.add('survol'); });
-  depot.addEventListener('dragleave', () => depot.classList.remove('survol'));
-  depot.addEventListener('drop', e => { e.preventDefault(); depot.classList.remove('survol'); choisirFichier(e.dataTransfer.files[0]); });
+  $('ajouter-version').addEventListener('click', () => {
+    const prises = new Set(versionsForm.map(v => v.plateforme));
+    const libre = ['windows', 'linux', 'macos', 'android', 'ios', 'web'].find(p => !prises.has(p)) || 'autre';
+    if (versionsForm.length === 1 && versionsForm[0].plateforme === 'autre' && !versionsForm[0].fichier && !versionsForm[0].existant && !versionsForm[0].lien) versionsForm[0].plateforme = 'windows';
+    versionsForm.push(nouvelleVersion({ plateforme: versionsForm.length ? libre === 'windows' ? 'linux' : libre : 'windows' }));
+    afficherVersions();
+  });
 
   // Image
   function apercu(url) {
@@ -981,7 +1043,7 @@
     $('f-id').value = '';
     imageChoisie = null; imageRetiree = false; apercu(null);
     imagesSec.forEach(im => im.url && URL.revokeObjectURL(im.url)); imagesSec = []; afficherImagesSec();
-    choisirFichier(null);
+    versionsForm = [nouvelleVersion()]; afficherVersions();
     $('titre-formulaire').textContent = 'Ajouter un élément';
     $('f-valider').textContent = 'Publier';
     $('f-annuler').hidden = true;
@@ -996,8 +1058,7 @@
     $('f-version').value = e.version || '';
     $('f-auteur').value = e.auteur || '';
     $('f-description').value = e.description || '';
-    $('f-lien').value = e.fichier?.url || '';
-    choisirFichier(null, e.fichier?.chemin || e.fichier?.stockage ? `Fichier actuel : ${e.fichier.nom} (déposer pour remplacer)` : null);
+    versionsForm = versionsDe(e).map(nouvelleVersion); if (!versionsForm.length) versionsForm = [nouvelleVersion()]; afficherVersions();
     if (e.image) apercu(urlFichier(e.image));
     imagesSec = (e.images || []).map(chemin => ({ chemin })); afficherImagesSec();
     $('titre-formulaire').textContent = `Modifier « ${e.nom} »`;
@@ -1040,10 +1101,9 @@
     const ancien = catalogue.elements.find(x => x.id === id);
     const nom = $('f-nom').value.trim();
     const type = $('f-type').value.trim();
-    const lien = $('f-lien').value.trim();
-
-    if (!fichierChoisi && !lien && !ancien?.fichier) return statut('f-statut', 'Ajoute un fichier ou un lien externe.', 'erreur');
-    if (fichierChoisi && fichierChoisi.size > LIMITE_OCTETS) return statut('f-statut', 'Fichier trop lourd pour le dépôt : utilise un lien externe.', 'erreur');
+    const incompletes = versionsForm.filter(v => !v.fichier && !v.lien && !v.existant);
+    if (incompletes.length) return statut('f-statut', versionsForm.length > 1 ? 'Chaque version doit avoir un fichier ou un lien externe.' : 'Ajoute un fichier ou un lien externe.', 'erreur');
+    if (versionsForm.some(v => v.lien && !/^https?:\/\//i.test(v.lien))) return statut('f-statut', 'Un lien externe doit commencer par https://', 'erreur');
     if (imageChoisie && imageChoisie.size > 5 * 1024 * 1024) return statut('f-statut', 'Image trop lourde (5 Mo maximum).', 'erreur');
 
     const bouton = $('f-valider');
@@ -1052,18 +1112,25 @@
     try {
       const dossier = `${slug(nom)}-${id}`;
       const marque = Date.now().toString(36);
-      let fichier = ancien?.fichier || null;
       const aSupprimer = [];
+      const anciensStockes = ancien ? versionsDe(ancien).map(v => v.fichier?.stockage).filter(Boolean) : [];
 
-      if (fichierChoisi) {
-        const chemin = `fichiers/${dossier}/${nomSur(fichierChoisi.name)}`;
-        await televerser(chemin, fichierChoisi, p => progression(`Envoi de ${fichierChoisi.name}`, p));
-        if (ancien?.fichier?.stockage && ancien.fichier.stockage !== chemin) aSupprimer.push(ancien.fichier.stockage);
-        fichier = { stockage: chemin, nom: fichierChoisi.name, taille: fichierChoisi.size };
-      } else if (lien) {
-        if (ancien?.fichier?.stockage) aSupprimer.push(ancien.fichier.stockage);
-        fichier = { url: lien, nom: decodeURIComponent(lien.split('/').pop().split('?')[0]) || 'Lien' };
+      // Une version par plateforme : envoi des nouveaux fichiers
+      const telechargements = [];
+      for (const v of versionsForm) {
+        let fichier = v.existant;
+        if (v.fichier) {
+          const chemin = `fichiers/${dossier}/${v.plateforme}-${marque}-${nomSur(v.fichier.name)}`;
+          await televerser(chemin, v.fichier, p => progression(`Envoi de ${v.fichier.name}`, p));
+          fichier = { stockage: chemin, nom: v.fichier.name, taille: v.fichier.size };
+        } else if (v.lien) {
+          fichier = { url: v.lien, nom: decodeURIComponent(v.lien.split('/').pop().split('?')[0]) || 'Lien' };
+        }
+        telechargements.push({ id: v.cle, plateforme: v.plateforme, libelle: v.libelle.trim(), fichier });
       }
+      const gardes = new Set(telechargements.map(t => t.fichier?.stockage).filter(Boolean));
+      anciensStockes.forEach(c => { if (!gardes.has(c)) aSupprimer.push(c); });
+      const fichier = telechargements[0]?.fichier || null;
 
       let image = ancien?.image || null;
       if (imageChoisie) {
@@ -1099,7 +1166,7 @@
         version: $('f-version').value.trim(),
         auteur: $('f-auteur').value.trim(),
         description: $('f-description').value.trim(),
-        fichier, image, images: imagesFinales,
+        fichier, telechargements, image, images: imagesFinales,
         ajoute_le: ancien?.ajoute_le || maintenant,
         modifie_le: maintenant,
       };

@@ -310,6 +310,28 @@ svg { flex-shrink: 0; }
 .vis-compteur { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); margin: 0; color: #d4d4de; font-size: .9rem; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.08); }
 .vis-compteur:empty { display: none; }
 
+/* Versions de téléchargement */
+.pied-plateformes { display: inline-flex !important; gap: 7px; margin-left: auto; }
+.pied-plateformes .ic { width: 15px; height: 15px; }
+.ic-windows { fill: currentColor; stroke: none; }
+.fichier-ligne { flex-wrap: nowrap; }
+.fichier-plateforme { width: 42px; height: 42px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; background: #1d1d24; }
+.fichier-plateforme .ic { width: 22px; height: 22px; }
+.fiche-fichiers { display: flex; flex-direction: column; gap: 10px; }
+.fichier-infos { flex: 1; }
+.versions-bloc { display: flex; flex-direction: column; gap: 10px; }
+.liste-versions { display: flex; flex-direction: column; gap: 10px; }
+.version-form { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: #16161e; border: 1px solid var(--bord); }
+.version-tete { display: flex; gap: 8px; align-items: center; }
+.version-tete select { width: auto; flex: 0 0 auto; }
+.version-tete input { flex: 1; min-width: 0; }
+.version-icone { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; border-radius: 9px; background: #1f1f2a; }
+.version-icone .ic { width: 18px; height: 18px; }
+.version-tete .version-retirer { position: static; flex-shrink: 0; width: 28px; height: 28px; }
+.depot.petit { padding: 12px; gap: 10px; justify-content: flex-start; text-align: left; }
+.depot.petit .ic { width: 20px; height: 20px; }
+.depot.petit small { color: var(--doux); }
+
 /* Images secondaires dans la gestion */
 .images-sec-bloc { display: flex; flex-direction: column; gap: 10px; }
 .images-sec-tete { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .86rem; color: var(--doux); font-weight: 500; }
@@ -629,6 +651,9 @@ input:not([type=checkbox]), textarea, select { width: 100%; }
   .grille { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
   .grille.liste .carte { grid-template-columns: 110px 1fr; }
   .fiche-media.avec-galerie { grid-template-columns: 1fr; }
+  .fichier-ligne { flex-wrap: wrap; }
+  .version-tete { flex-wrap: wrap; }
+  .version-tete input { flex-basis: 100%; order: 3; }
   .galerie-grille { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   #vis-image { max-width: 100%; max-height: calc(100% - 140px); border-radius: 0; }
   .vis-prec, .vis-suiv { top: auto; bottom: 14px; transform: none; width: 46px; height: 46px; }
