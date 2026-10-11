@@ -275,7 +275,49 @@ svg { flex-shrink: 0; }
 .fiche-stat span { font-size: .78rem; color: var(--doux); }
 .fiche-stat strong { font-size: .98rem; }
 .fiche-media { display: flex; }
-.fiche-image { display: block; width: min(100%, 720px); aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #2a2a32; }
+.fiche-image { display: block; width: min(100%, 720px); aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #2a2a32; padding: 0; border: 0; cursor: zoom-in; }
+.fiche-image.vide { cursor: default; }
+.fiche-media.avec-galerie { display: grid; grid-template-columns: minmax(0, 720px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.fiche-media.avec-galerie .fiche-image { width: 100%; }
+.galerie { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.galerie-titre { margin: 0; font-size: .85rem; font-weight: 600; color: var(--doux); }
+.galerie-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.vignette {
+  position: relative; aspect-ratio: 16 / 9; padding: 0; border: 0; border-radius: 6px; overflow: hidden; cursor: zoom-in; background: #2a2a32;
+  animation: arrivee .4s cubic-bezier(.2,.8,.2,1) backwards; animation-delay: calc(var(--i) * 50ms + 150ms);
+  outline: 2px solid transparent; transition: outline-color .2s, transform .2s;
+}
+.vignette img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
+.vignette:hover { outline-color: rgba(255,255,255,.5); }
+.vignette:hover img, .fiche-image:hover img { transform: scale(1.04); }
+.fiche-image img { transition: transform .3s; }
+.vignette-plus { position: absolute; inset: 0; display: grid; place-items: center; font: 700 1.5rem "Space Grotesk", sans-serif; color: #fff; background: rgba(0,0,0,.6); }
+
+/* Visionneuse */
+.visionneuse { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; }
+.visionneuse[open] { display: grid; place-items: center; }
+.visionneuse::backdrop { background: rgba(5,5,9,.92); backdrop-filter: blur(4px); }
+#vis-image { max-width: calc(100% - 140px); max-height: calc(100% - 110px); object-fit: contain; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+#vis-image.arrivee { animation: vis-arrivee .25s ease both; }
+@keyframes vis-arrivee { from { opacity: 0; transform: scale(.97); } }
+.vis-bouton { position: fixed; display: grid; place-items: center; cursor: pointer; color: #fff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 50%; }
+.vis-bouton:hover { background: rgba(255,255,255,.18); }
+.vis-fermer { top: 18px; right: 18px; width: 44px; height: 44px; font-size: 1.1rem; }
+.vis-prec, .vis-suiv { top: 50%; transform: translateY(-50%); width: 52px; height: 52px; font-size: 2rem; line-height: 1; padding-bottom: 4px; }
+.vis-prec { left: 18px; } .vis-suiv { right: 18px; }
+.vis-compteur { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); margin: 0; color: #d4d4de; font-size: .9rem; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.08); }
+.vis-compteur:empty { display: none; }
+
+/* Images secondaires dans la gestion */
+.images-sec-bloc { display: flex; flex-direction: column; gap: 10px; }
+.images-sec-tete { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .86rem; color: var(--doux); font-weight: 500; }
+.liste-images-sec { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.liste-images-sec .aide { grid-column: 1 / -1; }
+.image-sec { position: relative; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; background: #1a1a23; border: 1px solid var(--bord); }
+.image-sec img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.image-sec-nouvelle { position: absolute; left: 4px; bottom: 4px; font-size: .62rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: #00ff95; color: #0b0b10; }
+.image-sec-retirer { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; border: 0; cursor: pointer; font-size: .7rem; color: #fff; background: rgba(0,0,0,.7); }
+.image-sec-retirer:hover { background: #e5484d; }
 .fiche-image img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .fiche-image.vide { display: grid; place-items: center; }
 .fiche-image .initiale { width: 22%; aspect-ratio: 1; border-radius: 18%; display: grid; place-items: center; font: 700 3rem "Space Grotesk", sans-serif; color: #0b0b10; }
@@ -584,6 +626,10 @@ input:not([type=checkbox]), textarea, select { width: 100%; }
   .compte { margin-left: 4px; }
   .grille { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
   .grille.liste .carte { grid-template-columns: 110px 1fr; }
+  .fiche-media.avec-galerie { grid-template-columns: 1fr; }
+  .galerie-grille { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #vis-image { max-width: 100%; max-height: calc(100% - 140px); border-radius: 0; }
+  .vis-prec, .vis-suiv { top: auto; bottom: 14px; transform: none; width: 46px; height: 46px; }
   .carte-pied { gap: 8px; padding: 8px 10px; font-size: .78rem; }
   .grille.liste .carte-image { min-height: 110px; }
   .barre-outils { flex-direction: column; align-items: flex-start; }
@@ -593,7 +639,7 @@ input:not([type=checkbox]), textarea, select { width: 100%; }
   .carte, .bouton-gerer, .bouton-gerer svg { transition: none; }
   .bouton-gerer:hover { transform: none; }
   .chargeur i { animation-duration: 3s; }
-  .badge-beta, .badge-beta::after, .lien-helper, .lien-helper::after, .maj-resume, .maj-numero, .liste-maj::before, .maj, .maj-liste li, .actu, .carte, .filtres-corps, .filtre-section > *, .fiche > *, .fiche-onglet-corps > *, .commentaire { animation: none !important; }
+  .badge-beta, .badge-beta::after, .lien-helper, .lien-helper::after, .maj-resume, .maj-numero, .liste-maj::before, .maj, .maj-liste li, .actu, .carte, .filtres-corps, .filtre-section > *, .fiche > *, .fiche-onglet-corps > *, .commentaire, .vignette, #vis-image.arrivee { animation: none !important; }
   .carte, .carte-image img, .carte-image .initiale { transition: none; }
   .carte:hover { transform: none; }
   .carte:hover .carte-image img, .carte:hover .carte-image .initiale { transform: none; }

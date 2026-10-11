@@ -54,7 +54,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=0.7.0">
+<link rel="stylesheet" href="style.css?v=0.7.1">
 </head>
 <body>
 <canvas id="fond" aria-hidden="true"></canvas>
@@ -252,6 +252,16 @@
         <button type="button" id="retirer-image" class="lien-discret" hidden>Retirer</button>
       </div>
 
+      <div class="images-sec-bloc">
+        <div class="images-sec-tete">
+          <span>Images secondaires <small>(facultatif, 12 maximum)</small></span>
+          <label class="bouton-secondaire">Ajouter des images
+            <input id="f-images" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+          </label>
+        </div>
+        <div id="liste-images-sec" class="liste-images-sec"></div>
+      </div>
+
       <div id="progression" class="progression" hidden>
         <span class="chargeur-ici"></span>
         <div class="progression-texte">
@@ -308,6 +318,15 @@
       <div class="ligne actions"><button type="submit" class="bouton" id="c-valider">Vérifier et enregistrer</button></div>
     </form>
   </section>
+</dialog>
+
+<!-- Visionneuse d'images -->
+<dialog id="visionneuse" class="visionneuse" aria-label="Images en grand">
+  <img id="vis-image" alt="">
+  <button type="button" class="vis-bouton vis-fermer" id="vis-fermer" aria-label="Fermer">✕</button>
+  <button type="button" class="vis-bouton vis-prec" id="vis-prec" aria-label="Image précédente">‹</button>
+  <button type="button" class="vis-bouton vis-suiv" id="vis-suiv" aria-label="Image suivante">›</button>
+  <p id="vis-compteur" class="vis-compteur"></p>
 </dialog>
 
 <!-- Compte -->
@@ -371,7 +390,7 @@
 </dialog>
 
 <script src="supabase.js?v=2"></script>
-<script src="fond.js?v=0.7.0"></script>
-<script src="app.js?v=0.7.0"></script>
+<script src="fond.js?v=0.7.1"></script>
+<script src="app.js?v=0.7.1"></script>
 </body>
 </html>

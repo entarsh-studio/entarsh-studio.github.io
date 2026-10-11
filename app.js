@@ -549,6 +549,56 @@
   function ligneInfo(nom, valeur, titre) {
     return el('div', { class: 'fiche-info' }, el('span', {}, nom), el('strong', { title: titre || null }, valeur));
   }
+  // Image principale + images secondaires (cliquables pour les voir en grand)
+  function blocMedia(e, coul) {
+    const toutes = [e.image, ...(e.images || [])].filter(Boolean).map(encoderChemin);
+    const principale = e.image
+      ? el('button', { type: 'button', class: 'fiche-image', title: 'Voir en grand', onclick: () => ouvrirVisionneuse(toutes, 0) }, el('img', { src: encoderChemin(e.image), alt: `Image de ${e.nom}` }))
+      : el('div', { class: 'fiche-image vide' }, el('span', { class: 'initiale', style: `background:${coul}` }, (e.nom || '?').trim().charAt(0).toUpperCase()));
+    const sec = e.images || [];
+    if (!sec.length) return el('div', { class: 'fiche-media' }, principale);
+    const decalage = e.image ? 1 : 0;
+    const MAX = 6, visibles = sec.slice(0, MAX), reste = sec.length - MAX;
+    return el('div', { class: 'fiche-media avec-galerie' }, principale,
+      el('div', { class: 'galerie' },
+        el('p', { class: 'galerie-titre' }, `${sec.length} image${sec.length > 1 ? 's' : ''} secondaire${sec.length > 1 ? 's' : ''}`),
+        el('div', { class: 'galerie-grille' }, ...visibles.map((c, i) => el('button', { type: 'button', class: 'vignette', style: `--i:${i}`, title: 'Voir en grand',
+          onclick: () => ouvrirVisionneuse(toutes, i + decalage) },
+          el('img', { src: encoderChemin(c), alt: `Image ${i + 1} de ${e.nom}`, loading: 'lazy' }),
+          i === MAX - 1 && reste > 0 ? el('span', { class: 'vignette-plus' }, `+${reste}`) : null)))));
+  }
+
+  // ---------- Visionneuse ----------
+  let visImages = [], visIndex = 0;
+  function montrerImage(i) {
+    visIndex = (i + visImages.length) % visImages.length;
+    const img = $('vis-image');
+    img.classList.remove('arrivee'); void img.offsetWidth; img.classList.add('arrivee');
+    img.src = visImages[visIndex];
+    $('vis-compteur').textContent = visImages.length > 1 ? `${visIndex + 1} / ${visImages.length}` : '';
+    $('vis-prec').hidden = $('vis-suiv').hidden = visImages.length < 2;
+  }
+  function ouvrirVisionneuse(liste, i) {
+    if (!liste.length) return;
+    visImages = liste; montrerImage(i);
+    $('visionneuse').showModal();
+  }
+  $('vis-fermer').addEventListener('click', () => $('visionneuse').close());
+  $('vis-prec').addEventListener('click', () => montrerImage(visIndex - 1));
+  $('vis-suiv').addEventListener('click', () => montrerImage(visIndex + 1));
+  $('visionneuse').addEventListener('click', ev => { if (ev.target === $('visionneuse')) $('visionneuse').close(); });
+  $('visionneuse').addEventListener('keydown', ev => {
+    if (ev.key === 'ArrowLeft') montrerImage(visIndex - 1);
+    if (ev.key === 'ArrowRight') montrerImage(visIndex + 1);
+  });
+  let toucheX = null;
+  $('visionneuse').addEventListener('touchstart', ev => { toucheX = ev.touches[0].clientX; }, { passive: true });
+  $('visionneuse').addEventListener('touchend', ev => {
+    if (toucheX === null) return;
+    const dx = ev.changedTouches[0].clientX - toucheX; toucheX = null;
+    if (Math.abs(dx) > 50) montrerImage(visIndex + (dx < 0 ? 1 : -1));
+  });
+
   let ficheAffichee = null;
   function afficherFiche(id, garderOnglet) {
     const zone = $('vue-element');
@@ -610,9 +660,7 @@
           estGerant() ? el('button', { type: 'button', class: 'bouton-contour danger', onclick: () => gererElement(e, 'supprimer') }, icone('poubelle'), 'Supprimer') : null,
           boutonAime, boutonTelecharger(e, 'bouton-principal', 'Télécharger'))),
       blocStats(e),
-      el('div', { class: 'fiche-media' },
-        e.image ? el('a', { href: encoderChemin(e.image), target: '_blank', rel: 'noopener', class: 'fiche-image', title: 'Voir en grand' }, el('img', { src: encoderChemin(e.image), alt: `Image de ${e.nom}` }))
-          : el('div', { class: 'fiche-image vide' }, el('span', { class: 'initiale', style: `background:${coul}` }, (e.nom || '?').trim().charAt(0).toUpperCase()))),
+      blocMedia(e, coul),
       el('div', { class: 'fiche-infos' },
         ligneInfo('Dernière mise à jour', dateLisible(e.modifie_le || e.ajoute_le || ''), tempsRelatif(e.modifie_le || e.ajoute_le)),
         ligneInfo('Mise en ligne', dateLisible(e.ajoute_le || ''), tempsRelatif(e.ajoute_le)),
@@ -872,6 +920,8 @@
   // ---------- Panneau de gestion ----------
   const dialogue = $('gestion');
   let fichierChoisi = null, imageChoisie = null, imageRetiree = false;
+  let imagesSec = [];   // [{ chemin }] déjà publiées ou [{ fichier, url }] à envoyer
+  const MAX_IMAGES_SEC = 12;
 
   // Vérifie le jeton auprès de GitHub : valide, et droit d'écriture sur ce dépôt précis
   async function verifierJeton(jeton, proprio, depot) {
@@ -991,10 +1041,30 @@
     imageChoisie = null; imageRetiree = true; $('f-image').value = ''; apercu(null);
   });
 
+  function afficherImagesSec() {
+    $('liste-images-sec').replaceChildren(...(imagesSec.length ? imagesSec.map((im, i) => el('div', { class: 'image-sec' },
+      el('img', { src: im.url || encoderChemin(im.chemin), alt: '' }),
+      im.fichier ? el('span', { class: 'image-sec-nouvelle' }, 'Nouvelle') : null,
+      el('button', { type: 'button', class: 'image-sec-retirer', title: 'Retirer', 'aria-label': 'Retirer cette image',
+        onclick: () => { if (im.url) URL.revokeObjectURL(im.url); imagesSec.splice(i, 1); afficherImagesSec(); } }, '✕')))
+      : [el('p', { class: 'aide' }, 'Aucune image secondaire.')]));
+  }
+  afficherImagesSec();
+  $('f-images').addEventListener('change', ev => {
+    const fichiers = [...ev.target.files]; ev.target.value = '';
+    const place = MAX_IMAGES_SEC - imagesSec.length;
+    const trop = fichiers.filter(f => f.size > 5 * 1024 * 1024);
+    for (const f of fichiers.filter(f => f.size <= 5 * 1024 * 1024).slice(0, place)) imagesSec.push({ fichier: f, url: URL.createObjectURL(f) });
+    afficherImagesSec();
+    if (trop.length) statut('f-statut', `${trop.length} image(s) ignorée(s) : 5 Mo maximum par image.`, 'erreur');
+    else if (fichiers.length > place) statut('f-statut', `${MAX_IMAGES_SEC} images secondaires maximum.`, 'erreur');
+  });
+
   function viderFormulaire() {
     $('formulaire').reset();
     $('f-id').value = '';
     imageChoisie = null; imageRetiree = false; apercu(null);
+    imagesSec.forEach(im => im.url && URL.revokeObjectURL(im.url)); imagesSec = []; afficherImagesSec();
     choisirFichier(null);
     $('titre-formulaire').textContent = 'Ajouter un élément';
     $('f-valider').textContent = 'Publier';
@@ -1013,6 +1083,7 @@
     $('f-lien').value = e.fichier?.url || '';
     choisirFichier(null, e.fichier?.chemin ? `Fichier actuel : ${e.fichier.nom} (déposer pour remplacer)` : null);
     if (e.image) apercu(encoderChemin(e.image));
+    imagesSec = (e.images || []).map(chemin => ({ chemin })); afficherImagesSec();
     $('titre-formulaire').textContent = `Modifier « ${e.nom} »`;
     $('f-valider').textContent = 'Enregistrer';
     $('f-annuler').hidden = false;
@@ -1026,6 +1097,7 @@
       await modifierCatalogue(c => { c.elements = c.elements.filter(x => x.id !== e.id); }, `Catalogue : suppression de ${e.nom}`);
       if (e.fichier?.chemin) await supprimer(e.fichier.chemin, `Suppression du fichier de ${e.nom}`);
       if (e.image) await supprimer(e.image, `Suppression de l'image de ${e.nom}`);
+      for (const c of e.images || []) await supprimer(c, `Suppression d'une image de ${e.nom}`).catch(() => {});
       if ($('f-id').value === e.id) viderFormulaire();
       afficher(); listeGestion(); remplirTypes();
       statut('f-statut', `« ${e.nom} » supprimé. Le site public se met à jour d'ici une minute.`, 'ok');
@@ -1091,6 +1163,22 @@
         cheminImage = null;
       }
 
+      // Images secondaires : envoi des nouvelles, suppression des retirées
+      const cheminsSec = [];
+      const aEnvoyer = imagesSec.filter(im => im.fichier);
+      let n = 0;
+      for (const im of imagesSec) {
+        if (im.chemin) { cheminsSec.push(im.chemin); continue; }
+        n++;
+        const ext = (im.fichier.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+        const chemin = `images/${id}-${Date.now().toString(36)}${n}.${ext}`;
+        const etape = `Envoi des images secondaires (${n}/${aEnvoyer.length})`;
+        progression(etape);
+        await ecrire(chemin, await fichierVersBase64(im.fichier), `Image secondaire : ${nom}`, null, p => progression(etape, p));
+        cheminsSec.push(chemin);
+      }
+      for (const c of ancien?.images || []) if (!cheminsSec.includes(c)) aSupprimer.push(c);
+
       progression('Mise à jour du catalogue');
       const maintenant = new Date().toISOString();
       const element = {
@@ -1098,7 +1186,7 @@
         version: $('f-version').value.trim(),
         auteur: $('f-auteur').value.trim(),
         description: $('f-description').value.trim(),
-        fichier, image: cheminImage,
+        fichier, image: cheminImage, images: cheminsSec,
         ajoute_le: ancien?.ajoute_le || maintenant,
         modifie_le: maintenant,
       };

@@ -1,5 +1,5 @@
 {
- "version": "0.7.0",
+ "version": "0.7.1",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,24 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.7.1",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "nouveau",
+     "texte": "Images secondaires sur les fiches, à côté de l'image principale"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Visionneuse : clic sur une image pour l'afficher en grand, avec flèches, clavier et glissement sur mobile"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Gestion : ajout et retrait des images secondaires d'un élément"
+    }
+   ]
+  },
   {
    "version": "0.7.0",
    "date": "2026-10-11",
