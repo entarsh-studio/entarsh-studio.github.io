@@ -54,7 +54,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=0.7.1">
+<link rel="stylesheet" href="style.css?v=0.8.0">
 </head>
 <body>
 <canvas id="fond" aria-hidden="true"></canvas>
@@ -125,6 +125,13 @@
         <button id="crit-reset" type="button" class="lien-discret">Réinitialiser les filtres</button>
       </div>
     </div>
+
+    <label class="choix-fond">Fond d'écran
+      <select id="choix-fond">
+        <option value="carres">Carrés lumineux</option>
+        <option value="tetris">Tetris</option>
+      </select>
+    </label>
 
     <p class="version-site">Version <span id="version-site">—</span> · <span class="beta-texte">bêta</span></p>
   </aside>
@@ -209,12 +216,11 @@
       <span id="etat-connexion" class="etat-connexion"></span>
     </div>
     <div class="haut-actions">
-      <button type="button" class="lien-discret" id="changer-jeton" hidden>Changer le jeton GitHub</button>
       <button type="button" class="fermer" id="fermer-gestion" aria-label="Fermer">✕</button>
     </div>
   </div>
 
-  <nav id="panneau-onglets" class="panneau-onglets" role="tablist" hidden>
+  <nav id="panneau-onglets" class="panneau-onglets" role="tablist">
     <button type="button" class="p-onglet" data-panneau="element">Élément</button>
     <button type="button" class="p-onglet" data-panneau="actualite">Actualité</button>
   </nav>
@@ -240,7 +246,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-5 5m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
         <p id="depot-texte"><b>Glisser le fichier ici</b> ou cliquer pour choisir</p>
       </div>
-      <label>…ou lien externe <small>(fichiers de plus de 95 Mo, ex. GitHub Releases)</small>
+      <label>…ou lien externe <small>(fichiers de plus de 50 Mo : GitHub Releases, Google Drive…)</small>
         <input id="f-lien" type="url" placeholder="https://github.com/…/releases/download/…">
       </label>
 
@@ -295,29 +301,6 @@
   </section>
 
   <!-- Connexion -->
-  <section class="p-vue" data-panneau="connexion" hidden>
-    <form id="form-connexion" class="formulaire connexion">
-      <div class="cadenas" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z"/></svg></div>
-      <h3>Relier GitHub (une seule fois)</h3>
-      <p class="aide">Pour publier sur le site, la gestion a besoin d'un jeton GitHub <b>fine-grained</b> (GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens) : propriétaire <b>entarsh-studio</b>, accès au seul dépôt du site, permission <b>Contents : Read and write</b>.</p>
-      <label>Jeton<input id="c-jeton" type="password" autocomplete="off" placeholder="github_pat_…" required></label>
-      <details class="avance">
-        <summary>Dépôt (avancé)</summary>
-        <div class="ligne">
-          <label>Propriétaire<input id="gh-proprio" value="entarsh-studio" required></label>
-          <label>Dépôt<input id="gh-depot" value="entarsh-studio.github.io" required></label>
-          <label class="court">Branche<input id="gh-branche" value="main" required></label>
-        </div>
-      </details>
-      <ul class="securite">
-        <li>Le jeton est vérifié auprès de GitHub avant d'être accepté.</li>
-        <li>Il est rangé dans la base du site, lisible <b>uniquement</b> par un compte gérant.</li>
-        <li>Ensuite, il suffit de te connecter avec ton compte pour gérer, sur n'importe quel appareil.</li>
-      </ul>
-      <p id="c-statut" class="statut" role="status"></p>
-      <div class="ligne actions"><button type="submit" class="bouton" id="c-valider">Vérifier et enregistrer</button></div>
-    </form>
-  </section>
 </dialog>
 
 <!-- Visionneuse d'images -->
@@ -390,7 +373,7 @@
 </dialog>
 
 <script src="supabase.js?v=2"></script>
-<script src="fond.js?v=0.7.1"></script>
-<script src="app.js?v=0.7.1"></script>
+<script src="fond.js?v=0.8.0"></script>
+<script src="app.js?v=0.8.0"></script>
 </body>
 </html>

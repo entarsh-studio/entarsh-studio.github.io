@@ -2,13 +2,14 @@
 (() => {
   const COULEURS = ['#8b00ff', '#ffe000', '#ff0000', '#e600ff', '#40ff00', '#00a3ff', '#00ff95', '#ff0080', '#ff8a00'];
   const TYPES_DE_BASE = ['Jeu vidéo', 'Éditeur', 'Logiciel', 'Outil'];
-  const LIMITE_OCTETS = 95 * 1024 * 1024; // GitHub refuse les fichiers de plus de 100 Mo
+  const LIMITE_OCTETS = 50 * 1024 * 1024; // limite du stockage gratuit Supabase par fichier
   try { localStorage.removeItem('entarsh-catalogue-coffre'); } catch {} // ancien coffre local (v0.3–0.5), remplacé par les comptes
   try { localStorage.removeItem('entarsh-catalogue-github'); } catch {} // ancien stockage en clair (v0.1–0.2)
   const VUES = ['catalogue', 'actualites', 'mises-a-jour'];
 
   const $ = id => document.getElementById(id);
   let catalogue = { version: 1, types: [], elements: [] };
+  let contenuEnLigne = false;   // true quand le contenu vient de la base (gestion possible)
   let site = { version: '', beta: true, actualites: [], mises_a_jour: [] };
   const CLE_AFFICHAGE = 'entarsh-catalogue-affichage';
   const criteres = { types: new Set(), nom: '', desc: '', auteur: '', periode: 0, tri: 'ajout', ordre: 'desc', parPage: 24, page: 1, vue: 'grille', filtres: true };
@@ -333,6 +334,10 @@
   const normaliser = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const slug = s => normaliser(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'element';
   const encoderChemin = p => p.split('/').map(encodeURIComponent).join('/');
+  const STOCKAGE_PUBLIC = 'https://hltchrwrefrrfhtzimkn.supabase.co/storage/v1/object/public/catalogue/';
+  // Adresse d'une image ou d'un fichier : adresse complète (stockage) ou chemin du site
+  const urlFichier = p => !p ? '' : /^https?:/.test(p) ? p : encoderChemin(p);
+  const cheminStockage = u => typeof u === 'string' && u.startsWith(STOCKAGE_PUBLIC) ? decodeURIComponent(u.slice(STOCKAGE_PUBLIC.length)) : null;
   const nouvelId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const tousLesTypes = () => [...new Set([...TYPES_DE_BASE, ...catalogue.types, ...catalogue.elements.map(e => e.type)])];
 
@@ -354,12 +359,21 @@
   // ---------- Chargement ----------
   async function charger() {
     $('etat').replaceChildren(chargeur(true), el('span', {}, 'Chargement du catalogue…'));
-    const lire = async f => { const r = await fetch(f, { cache: 'no-cache' }); if (!r.ok) throw new Error(r.status); return r.json(); };
-    const [cat, inf] = await Promise.allSettled([lire('catalogue.json'), lire('site.json'), chargerStats(), chargerCompte()]);
+    const lireJson = async f => { const r = await fetch(f, { cache: 'no-cache' }); if (!r.ok) throw new Error(r.status); return r.json(); };
+    const [inf, elems, actus] = await Promise.allSettled([lireJson('site.json'),
+      sb.from('catalogue_elements').select('data').then(r => { if (r.error) throw r.error; return r.data; }),
+      sb.from('catalogue_actualites').select('id,date,titre,texte').then(r => { if (r.error) throw r.error; return r.data; }),
+      chargerStats(), chargerCompte()]);
     if (inf.status === 'fulfilled') site = { ...site, ...inf.value };
+    if (elems.status === 'fulfilled') {           // contenu géré depuis le site
+      contenuEnLigne = true;
+      catalogue = { types: [], elements: elems.value.map(x => x.data) };
+      if (actus.status === 'fulfilled') site.actualites = actus.value;
+    } else {                                      // avant le script SQL : ancien fichier du site
+      try { catalogue = { types: [], elements: [], ...(await lireJson('catalogue.json')) }; }
+      catch { afficherSite(); $('etat').textContent = 'Impossible de charger le catalogue.'; return; }
+    }
     afficherSite();
-    if (cat.status !== 'fulfilled') { $('etat').textContent = 'Impossible de charger le catalogue.'; return; }
-    catalogue = { types: [], elements: [], ...cat.value };
     afficher();
     changerVue();
   }
@@ -485,10 +499,9 @@
   function carte(e, i) {
     const coul = couleurType(e.type);
     const image = e.image
-      ? el('img', { src: encoderChemin(e.image), alt: '', loading: 'lazy' })
+      ? el('img', { src: urlFichier(e.image), alt: '', loading: 'lazy' })
       : el('span', { class: 'initiale', style: `background:${coul}` }, (e.nom || '?').trim().charAt(0).toUpperCase());
     const f = e.fichier || {};
-    const href = f.url || (f.chemin ? encoderChemin(f.chemin) : null);
     const lien = `#element/${encodeURIComponent(e.id)}`;
     return el('article', { class: 'carte', style: `--i:${Math.min(i, 12)};--type:${coul}` },
       el('a', { class: 'carte-image', href: lien, 'aria-label': `Voir ${e.nom}` }, image),
@@ -512,7 +525,9 @@
   // ---------- Fiche détaillée d'un élément ----------
   function lienTelechargement(e) {
     const f = e.fichier || {};
-    return { f, href: f.url || (f.chemin ? encoderChemin(f.chemin) : null) };
+    const href = f.stockage ? STOCKAGE_PUBLIC + encoderChemin(f.stockage) + '?download=' + encodeURIComponent(f.nom || '')
+      : f.url || (f.chemin ? encoderChemin(f.chemin) : null);
+    return { f, href };
   }
   function boutonTelecharger(e, classe, texte) {
     const { f, href } = lienTelechargement(e);
@@ -551,9 +566,9 @@
   }
   // Image principale + images secondaires (cliquables pour les voir en grand)
   function blocMedia(e, coul) {
-    const toutes = [e.image, ...(e.images || [])].filter(Boolean).map(encoderChemin);
+    const toutes = [e.image, ...(e.images || [])].filter(Boolean).map(urlFichier);
     const principale = e.image
-      ? el('button', { type: 'button', class: 'fiche-image', title: 'Voir en grand', onclick: () => ouvrirVisionneuse(toutes, 0) }, el('img', { src: encoderChemin(e.image), alt: `Image de ${e.nom}` }))
+      ? el('button', { type: 'button', class: 'fiche-image', title: 'Voir en grand', onclick: () => ouvrirVisionneuse(toutes, 0) }, el('img', { src: urlFichier(e.image), alt: `Image de ${e.nom}` }))
       : el('div', { class: 'fiche-image vide' }, el('span', { class: 'initiale', style: `background:${coul}` }, (e.nom || '?').trim().charAt(0).toUpperCase()));
     const sec = e.images || [];
     if (!sec.length) return el('div', { class: 'fiche-media' }, principale);
@@ -564,7 +579,7 @@
         el('p', { class: 'galerie-titre' }, `${sec.length} image${sec.length > 1 ? 's' : ''} secondaire${sec.length > 1 ? 's' : ''}`),
         el('div', { class: 'galerie-grille' }, ...visibles.map((c, i) => el('button', { type: 'button', class: 'vignette', style: `--i:${i}`, title: 'Voir en grand',
           onclick: () => ouvrirVisionneuse(toutes, i + decalage) },
-          el('img', { src: encoderChemin(c), alt: `Image ${i + 1} de ${e.nom}`, loading: 'lazy' }),
+          el('img', { src: urlFichier(c), alt: `Image ${i + 1} de ${e.nom}`, loading: 'lazy' }),
           i === MAX - 1 && reste > 0 ? el('span', { class: 'vignette-plus' }, `+${reste}`) : null)))));
   }
 
@@ -727,18 +742,12 @@
   // ---------- Raccourcis du gérant : ajouter / modifier / supprimer directement ----------
   async function preparerGestion() {
     if (!estGerant()) return false;
-    if (session) return true;
-    try {
-      const infos = await chargerJeton();
-      if (!infos) { afficherPanneau(); dialogue.showModal(); statut('c-statut', 'Relie d\'abord GitHub (une seule fois).', ''); return false; }
-      infos.login = await verifierJeton(infos.jeton, infos.proprio, infos.depot);
-      session = infos;
-      return true;
-    } catch (err) { afficherPanneau(); dialogue.showModal(); statut('c-statut', err.message + ' Enregistre un nouveau jeton.', 'erreur'); return false; }
+    if (!contenuEnLigne) { alert("La gestion n'est pas encore activée : lance le script supabase-contenu.sql dans Supabase, puis recharge la page."); return false; }
+    return true;
   }
   async function gererElement(e, action) {
     if (!(await preparerGestion())) return;
-    afficherPanneau();
+    ongletPanneau('element'); afficherPanneau();
     if (action === 'ajouter') { viderFormulaire(); dialogue.showModal(); setTimeout(() => $('f-nom').focus(), 50); return; }
     if (action === 'modifier') { dialogue.showModal(); modifierElement(e); return; }
     if (action === 'supprimer') {
@@ -833,109 +842,48 @@
     listeActusGestion();
   }
 
-  // ---------- API GitHub ----------
-  // Le jeton déchiffré n'existe qu'en mémoire, jamais dans le stockage du navigateur.
-  let session = null; // { jeton, proprio, depot, branche, login }
-  const reglages = () => session || {};
-  const urlApi = chemin => { const r = reglages(); return `https://api.github.com/repos/${r.proprio}/${r.depot}/contents/${encoderChemin(chemin)}`; };
-  function entetes() {
-    const r = reglages();
-    if (!r.jeton) throw new Error('Gestion non connectée à GitHub.');
-    return { Authorization: `Bearer ${r.jeton}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+  // ---------- Envoi de fichiers dans le stockage du site (Supabase) ----------
+  let session = null;   // gardé pour compatibilité (n'est plus utilisé)
+  const nomSur = n => (n || 'fichier').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'fichier';
+  async function jetonGerant() {
+    const { data } = await sb.auth.getSession();
+    if (!data.session) throw new Error('Ta session a expiré, reconnecte-toi.');
+    return data.session.access_token;
   }
-  function erreurGitHub(status, message) {
-    let msg = message || status;
-    if (status === 401) msg = 'jeton refusé (expiré ou invalide)';
-    else if (status === 403 || status === 404) msg += ' — vérifie le dépôt et la permission Contents du jeton';
-    const err = new Error(`GitHub : ${msg}`); err.status = status; return err;
-  }
-  // Lecture (renvoie null si le fichier n'existe pas)
-  async function lire(chemin) {
-    const rep = await fetch(urlApi(chemin) + `?ref=${encodeURIComponent(reglages().branche)}`, { headers: entetes(), cache: 'no-store' });
-    if (rep.status === 404) return null;
-    if (!rep.ok) { let m; try { m = (await rep.json()).message; } catch {} throw erreurGitHub(rep.status, m); }
-    return rep.json();
-  }
-  // Écriture avec progression (XMLHttpRequest pour suivre l'envoi)
-  function ecrire(chemin, base64, message, sha, surProgression) {
-    const corps = JSON.stringify({ message, content: base64, branch: reglages().branche, ...(sha ? { sha } : {}) });
-    const h = entetes();
+  // Envoie un fichier avec suivi de progression ; renvoie le chemin dans le stockage
+  async function televerser(chemin, fichier, surProgression) {
+    const jeton = await jetonGerant();
     return new Promise((ok, ko) => {
       const x = new XMLHttpRequest();
-      x.open('PUT', urlApi(chemin));
-      for (const [k, v] of Object.entries(h)) x.setRequestHeader(k, v);
-      x.setRequestHeader('Content-Type', 'application/json');
+      x.open('POST', `${SB_URL}/storage/v1/object/catalogue/${encoderChemin(chemin)}`);
+      x.setRequestHeader('Authorization', `Bearer ${jeton}`);
+      x.setRequestHeader('apikey', SB_CLE);
+      x.setRequestHeader('x-upsert', 'true');
+      x.setRequestHeader('Content-Type', fichier.type || 'application/octet-stream');
       if (surProgression) x.upload.onprogress = e => e.lengthComputable && surProgression(e.loaded / e.total);
       x.onload = () => {
-        if (x.status >= 200 && x.status < 300) return ok(JSON.parse(x.responseText || 'null'));
-        let m; try { m = JSON.parse(x.responseText).message; } catch {}
-        ko(erreurGitHub(x.status, m));
+        if (x.status >= 200 && x.status < 300) return ok(chemin);
+        let m = ''; try { m = JSON.parse(x.responseText).message || ''; } catch {}
+        ko(new Error(/size|large|exceed/i.test(m) || x.status === 413 ? 'Fichier trop lourd pour le stockage (50 Mo maximum).'
+          : /row-level|policy|unauthor/i.test(m) || x.status === 403 ? "Envoi refusé : ton compte n'est pas gérant." : `Envoi impossible (${m || x.status}).`));
       };
-      x.onerror = () => ko(new Error('Connexion à GitHub impossible.'));
-      x.send(corps);
+      x.onerror = () => ko(new Error('Connexion au stockage impossible.'));
+      x.send(fichier);
     });
   }
-  async function supprimer(chemin, message) {
-    const info = await lire(chemin);
-    if (!info) return;
-    const rep = await fetch(urlApi(chemin), {
-      method: 'DELETE', headers: { ...entetes(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, sha: info.sha, branch: reglages().branche }),
-    });
-    if (!rep.ok) { let m; try { m = (await rep.json()).message; } catch {} throw erreurGitHub(rep.status, m); }
+  async function retirerDuStockage(chemins) {
+    const liste = chemins.filter(Boolean);
+    if (liste.length) await sb.storage.from('catalogue').remove(liste).catch(() => {});
   }
-  const texteVersBase64 = t => {
-    const o = new TextEncoder().encode(t);
-    let b = '';
-    for (let i = 0; i < o.length; i += 0x8000) b += String.fromCharCode(...o.subarray(i, i + 0x8000));
-    return btoa(b);
-  };
-  const base64VersTexte = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g, '')), c => c.charCodeAt(0)));
-  const fichierVersBase64 = f => new Promise((ok, ko) => {
-    const lecteur = new FileReader();
-    lecteur.onload = () => ok(lecteur.result.slice(lecteur.result.indexOf(',') + 1));
-    lecteur.onerror = () => ko(lecteur.error);
-    lecteur.readAsDataURL(f);
-  });
-
-  // Relit un JSON du dépôt, applique la modification, le réécrit (1 nouvel essai si conflit)
-  async function modifierJson(chemin, defaut, modif, message) {
-    for (let essai = 0; essai < 2; essai++) {
-      const info = await lire(chemin);
-      const actuel = info ? JSON.parse(base64VersTexte(info.content)) : structuredClone(defaut);
-      modif(actuel);
-      try {
-        await ecrire(chemin, texteVersBase64(JSON.stringify(actuel, null, 1) + '\n'), message, info?.sha);
-        return actuel;
-      } catch (e) { if (e.status !== 409 || essai) throw e; }
-    }
-  }
-  const modifierCatalogue = async (modif, message) => {
-    catalogue = await modifierJson('catalogue.json', { version: 1, types: [], elements: [] }, c => { c.types ||= []; c.elements ||= []; modif(c); }, message);
-  };
-  const modifierSite = async (modif, message) => {
-    site = await modifierJson('site.json', { version: '', beta: true, actualites: [], mises_a_jour: [] }, s => { s.actualites ||= []; modif(s); }, message);
-  };
+  const erreurGerant = error => new Error(/reserve_gerant/.test(error.message) ? 'Réservé au gérant.' : /JWT|expired/i.test(error.message) ? 'Ta session a expiré, reconnecte-toi.' : `Erreur du serveur : ${error.message}`);
+  // Fichiers d'un élément rangés dans le stockage (les anciens fichiers du site ne peuvent pas être supprimés d'ici)
+  const fichiersStockes = e => [e.fichier?.stockage, cheminStockage(e.image), ...(e.images || []).map(cheminStockage)].filter(Boolean);
 
   // ---------- Panneau de gestion ----------
   const dialogue = $('gestion');
   let fichierChoisi = null, imageChoisie = null, imageRetiree = false;
   let imagesSec = [];   // [{ chemin }] déjà publiées ou [{ fichier, url }] à envoyer
   const MAX_IMAGES_SEC = 12;
-
-  // Vérifie le jeton auprès de GitHub : valide, et droit d'écriture sur ce dépôt précis
-  async function verifierJeton(jeton, proprio, depot) {
-    const h = { Authorization: `Bearer ${jeton}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
-    const u = await fetch('https://api.github.com/user', { headers: h });
-    if (u.status === 401) throw new Error('Jeton refusé par GitHub (invalide ou expiré).');
-    if (!u.ok) throw new Error(`GitHub ne répond pas correctement (${u.status}).`);
-    const login = (await u.json()).login;
-    const d = await fetch(`https://api.github.com/repos/${proprio}/${depot}`, { headers: h });
-    if (d.status === 404 || d.status === 403) throw new Error(`Ce jeton n'a pas accès au dépôt ${proprio}/${depot}.`);
-    if (!d.ok) throw new Error(`Impossible de vérifier le dépôt (${d.status}).`);
-    if (!(await d.json()).permissions?.push) throw new Error('Ce jeton peut lire le dépôt mais pas y écrire : ajoute la permission Contents : Read and write.');
-    return login;
-  }
 
   // ---------- Affichage du panneau ----------
   function ongletPanneau(nom) {
@@ -945,53 +893,21 @@
   dialogue.querySelectorAll('.p-onglet').forEach(b => b.addEventListener('click', () => ongletPanneau(b.dataset.panneau)));
 
   function afficherPanneau() {
-    const relie = !!session;
-    $('panneau-onglets').hidden = !relie;
-    $('changer-jeton').hidden = !relie;
-    $('etat-connexion').textContent = relie ? `${compte.pseudo} (gérant) · GitHub ${session.proprio}/${session.depot}` : `${compte?.pseudo || ''} (gérant) · GitHub non relié`;
-    $('etat-connexion').classList.toggle('ok', relie);
-    if (relie) { ongletPanneau('element'); remplirTypes(); listeGestion(); listeActusGestion(); return; }
-    ongletPanneau('connexion');
-    $('c-jeton').value = '';
-  }
-
-  // Récupère le jeton GitHub rangé dans Supabase (réservé au gérant)
-  async function chargerJeton() {
-    const { data, error } = await sb.rpc('catalogue_jeton_lire');
-    if (error) throw new Error(/reserve_gerant/.test(error.message) ? 'Réservé au gérant.' : 'Impossible de joindre la base du site.');
-    if (!data) return null;
-    let infos; try { infos = JSON.parse(data); } catch { infos = { jeton: data }; }
-    return { proprio: 'entarsh-studio', depot: 'entarsh-studio.github.io', branche: 'main', ...infos };
+    $('etat-connexion').textContent = `Connecté en tant qu'Entarsh Studio (${compte?.pseudo || ''})`;
+    $('etat-connexion').classList.add('ok');
+    if (!dialogue.open) ongletPanneau('element');
+    remplirTypes(); listeGestion(); listeActusGestion();
   }
 
   $('ouvrir-gestion').addEventListener('click', async () => {
     if (!estGerant()) return;
-    statut('c-statut', '');
     const btn = $('ouvrir-gestion'); btn.disabled = true;
     const pret = await preparerGestion();
     btn.disabled = false;
-    if (pret) { afficherPanneau(); dialogue.showModal(); }
+    if (pret) { ongletPanneau('element'); afficherPanneau(); dialogue.showModal(); }
   });
   $('fermer-gestion').addEventListener('click', () => dialogue.close());
   dialogue.addEventListener('click', e => { if (e.target === dialogue) dialogue.close(); });
-  $('changer-jeton').addEventListener('click', () => { session = null; afficherPanneau(); $('c-jeton').focus(); });
-
-  $('form-connexion').addEventListener('submit', async ev => {
-    ev.preventDefault();
-    const jeton = $('c-jeton').value.trim();
-    const infos = { proprio: $('gh-proprio').value.trim(), depot: $('gh-depot').value.trim(), branche: $('gh-branche').value.trim() || 'main' };
-    if (/^gh[pousr]_/.test(jeton)) return statut('c-statut', 'Ce jeton est un jeton « classique », qui donne accès à tout ton compte GitHub. Crée plutôt un jeton fine-grained limité au dépôt du site.', 'erreur');
-    const bouton = $('c-valider');
-    bouton.disabled = true; bouton.replaceChildren(chargeur(), ' Vérification…');
-    try {
-      const login = await verifierJeton(jeton, infos.proprio, infos.depot);
-      const { error } = await sb.rpc('catalogue_jeton_ecrire', { p_jeton: JSON.stringify({ ...infos, jeton }) });
-      if (error) throw new Error(/reserve_gerant/.test(error.message) ? 'Réservé au gérant.' : "Le jeton est valide mais n'a pas pu être enregistré.");
-      session = { ...infos, jeton, login };
-      afficherPanneau();
-    } catch (err) { statut('c-statut', err.message, 'erreur'); }
-    finally { bouton.disabled = false; bouton.textContent = 'Vérifier et enregistrer'; }
-  });
 
   function remplirTypes() {
     $('liste-types').replaceChildren(...tousLesTypes().map(t => el('option', { value: t })));
@@ -1017,7 +933,7 @@
     depot.classList.toggle('rempli', !!f);
     $('depot-texte').replaceChildren(...(f ? [el('b', {}, f.name), ` — ${tailleLisible(f.size)}`]
       : texteActuel ? [texteActuel] : [el('b', {}, 'Glisser le fichier ici'), ' ou cliquer pour choisir']));
-    if (f && f.size > LIMITE_OCTETS) statut('f-statut', 'Fichier de plus de 95 Mo : GitHub le refusera. Mets-le dans une Release et colle le lien.', 'erreur');
+    if (f && f.size > LIMITE_OCTETS) statut('f-statut', 'Fichier de plus de 50 Mo : mets-le en ligne ailleurs (GitHub Releases, Google Drive…) et colle le lien.', 'erreur');
     else statut('f-statut', '');
   }
   depot.addEventListener('click', () => $('f-fichier').click());
@@ -1043,7 +959,7 @@
 
   function afficherImagesSec() {
     $('liste-images-sec').replaceChildren(...(imagesSec.length ? imagesSec.map((im, i) => el('div', { class: 'image-sec' },
-      el('img', { src: im.url || encoderChemin(im.chemin), alt: '' }),
+      el('img', { src: im.url || urlFichier(im.chemin), alt: '' }),
       im.fichier ? el('span', { class: 'image-sec-nouvelle' }, 'Nouvelle') : null,
       el('button', { type: 'button', class: 'image-sec-retirer', title: 'Retirer', 'aria-label': 'Retirer cette image',
         onclick: () => { if (im.url) URL.revokeObjectURL(im.url); imagesSec.splice(i, 1); afficherImagesSec(); } }, '✕')))
@@ -1081,8 +997,8 @@
     $('f-auteur').value = e.auteur || '';
     $('f-description').value = e.description || '';
     $('f-lien').value = e.fichier?.url || '';
-    choisirFichier(null, e.fichier?.chemin ? `Fichier actuel : ${e.fichier.nom} (déposer pour remplacer)` : null);
-    if (e.image) apercu(encoderChemin(e.image));
+    choisirFichier(null, e.fichier?.chemin || e.fichier?.stockage ? `Fichier actuel : ${e.fichier.nom} (déposer pour remplacer)` : null);
+    if (e.image) apercu(urlFichier(e.image));
     imagesSec = (e.images || []).map(chemin => ({ chemin })); afficherImagesSec();
     $('titre-formulaire').textContent = `Modifier « ${e.nom} »`;
     $('f-valider').textContent = 'Enregistrer';
@@ -1094,13 +1010,14 @@
     if (!confirm(`Supprimer « ${e.nom} » du catalogue et ses fichiers ?`)) return false;
     try {
       progression('Suppression…');
-      await modifierCatalogue(c => { c.elements = c.elements.filter(x => x.id !== e.id); }, `Catalogue : suppression de ${e.nom}`);
-      if (e.fichier?.chemin) await supprimer(e.fichier.chemin, `Suppression du fichier de ${e.nom}`);
-      if (e.image) await supprimer(e.image, `Suppression de l'image de ${e.nom}`);
-      for (const c of e.images || []) await supprimer(c, `Suppression d'une image de ${e.nom}`).catch(() => {});
+      const { error } = await sb.rpc('catalogue_element_supprimer', { p_id: e.id });
+      if (error) throw erreurGerant(error);
+      catalogue.elements = catalogue.elements.filter(x => x.id !== e.id);
+      delete stats[e.id];
+      await retirerDuStockage(fichiersStockes(e));
       if ($('f-id').value === e.id) viderFormulaire();
       afficher(); listeGestion(); remplirTypes();
-      statut('f-statut', `« ${e.nom} » supprimé. Le site public se met à jour d'ici une minute.`, 'ok');
+      statut('f-statut', `« ${e.nom} » supprimé.`, 'ok');
       return true;
     } catch (err) { statut('f-statut', err.message, 'erreur'); return false; }
     finally { progression(null); }
@@ -1133,51 +1050,47 @@
     bouton.disabled = true;
     statut('f-statut', '');
     try {
-      const dossier = `fichiers/${slug(nom)}-${id}`;
+      const dossier = `${slug(nom)}-${id}`;
+      const marque = Date.now().toString(36);
       let fichier = ancien?.fichier || null;
       const aSupprimer = [];
 
       if (fichierChoisi) {
-        progression(`Préparation de ${fichierChoisi.name}`);
-        const chemin = `${dossier}/${fichierChoisi.name}`;
-        const [existant, contenu] = await Promise.all([lire(chemin), fichierVersBase64(fichierChoisi)]);
-        await ecrire(chemin, contenu, `Fichier : ${nom}`, existant?.sha, p => progression(`Envoi de ${fichierChoisi.name}`, p));
-        if (ancien?.fichier?.chemin && ancien.fichier.chemin !== chemin) aSupprimer.push(ancien.fichier.chemin);
-        fichier = { chemin, nom: fichierChoisi.name, taille: fichierChoisi.size };
+        const chemin = `fichiers/${dossier}/${nomSur(fichierChoisi.name)}`;
+        await televerser(chemin, fichierChoisi, p => progression(`Envoi de ${fichierChoisi.name}`, p));
+        if (ancien?.fichier?.stockage && ancien.fichier.stockage !== chemin) aSupprimer.push(ancien.fichier.stockage);
+        fichier = { stockage: chemin, nom: fichierChoisi.name, taille: fichierChoisi.size };
       } else if (lien) {
-        if (ancien?.fichier?.chemin) aSupprimer.push(ancien.fichier.chemin);
+        if (ancien?.fichier?.stockage) aSupprimer.push(ancien.fichier.stockage);
         fichier = { url: lien, nom: decodeURIComponent(lien.split('/').pop().split('?')[0]) || 'Lien' };
       }
 
-      let cheminImage = ancien?.image || null;
+      let image = ancien?.image || null;
       if (imageChoisie) {
-        progression('Envoi de l\'image');
-        const ext = (imageChoisie.name.split('.').pop() || 'png').toLowerCase();
-        const nouveau = `images/${id}.${ext}`;
-        const [existant, contenu] = await Promise.all([lire(nouveau), fichierVersBase64(imageChoisie)]);
-        await ecrire(nouveau, contenu, `Image : ${nom}`, existant?.sha, p => progression('Envoi de l\'image', p));
-        if (cheminImage && cheminImage !== nouveau) aSupprimer.push(cheminImage);
-        cheminImage = nouveau;
-      } else if (imageRetiree && cheminImage) {
-        aSupprimer.push(cheminImage);
-        cheminImage = null;
+        const ext = nomSur(imageChoisie.name).split('.').pop().toLowerCase() || 'png';
+        const chemin = `images/${id}-${marque}.${ext}`;
+        await televerser(chemin, imageChoisie, p => progression("Envoi de l'image", p));
+        if (cheminStockage(image)) aSupprimer.push(cheminStockage(image));
+        image = STOCKAGE_PUBLIC + encoderChemin(chemin);
+      } else if (imageRetiree && image) {
+        if (cheminStockage(image)) aSupprimer.push(cheminStockage(image));
+        image = null;
       }
 
       // Images secondaires : envoi des nouvelles, suppression des retirées
-      const cheminsSec = [];
+      const imagesFinales = [];
       const aEnvoyer = imagesSec.filter(im => im.fichier);
       let n = 0;
       for (const im of imagesSec) {
-        if (im.chemin) { cheminsSec.push(im.chemin); continue; }
+        if (im.chemin) { imagesFinales.push(im.chemin); continue; }
         n++;
-        const ext = (im.fichier.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
-        const chemin = `images/${id}-${Date.now().toString(36)}${n}.${ext}`;
+        const ext = nomSur(im.fichier.name).split('.').pop().toLowerCase() || 'png';
+        const chemin = `images/${id}-${marque}-${n}.${ext}`;
         const etape = `Envoi des images secondaires (${n}/${aEnvoyer.length})`;
-        progression(etape);
-        await ecrire(chemin, await fichierVersBase64(im.fichier), `Image secondaire : ${nom}`, null, p => progression(etape, p));
-        cheminsSec.push(chemin);
+        await televerser(chemin, im.fichier, p => progression(etape, p));
+        imagesFinales.push(STOCKAGE_PUBLIC + encoderChemin(chemin));
       }
-      for (const c of ancien?.images || []) if (!cheminsSec.includes(c)) aSupprimer.push(c);
+      for (const c of ancien?.images || []) if (!imagesFinales.includes(c) && cheminStockage(c)) aSupprimer.push(cheminStockage(c));
 
       progression('Mise à jour du catalogue');
       const maintenant = new Date().toISOString();
@@ -1186,21 +1099,20 @@
         version: $('f-version').value.trim(),
         auteur: $('f-auteur').value.trim(),
         description: $('f-description').value.trim(),
-        fichier, image: cheminImage, images: cheminsSec,
+        fichier, image, images: imagesFinales,
         ajoute_le: ancien?.ajoute_le || maintenant,
         modifie_le: maintenant,
       };
-      await modifierCatalogue(c => {
-        const i = c.elements.findIndex(x => x.id === id);
-        if (i >= 0) c.elements[i] = element; else c.elements.push(element);
-        if (!c.types.includes(type)) c.types.push(type);
-      }, `Catalogue : ${ancien ? 'modification' : 'ajout'} de ${nom}`);
+      const { error } = await sb.rpc('catalogue_element_enregistrer', { p_element: element });
+      if (error) throw erreurGerant(error);
+      const i = catalogue.elements.findIndex(x => x.id === id);
+      if (i >= 0) catalogue.elements[i] = element; else catalogue.elements.push(element);
 
-      for (const p of aSupprimer) await supprimer(p, `Remplacement d'un fichier de ${nom}`).catch(() => {});
+      await retirerDuStockage(aSupprimer);
 
       afficher(); listeGestion(); remplirTypes(); rafraichirFiche(true);
       viderFormulaire();
-      statut('f-statut', `« ${nom} » publié. Visible par tous d'ici une minute (le temps que GitHub Pages se mette à jour).`, 'ok');
+      statut('f-statut', `« ${nom} » publié. Il est déjà visible par tous.`, 'ok');
     } catch (err) {
       statut('f-statut', err.message, 'erreur');
     } finally {
@@ -1219,7 +1131,9 @@
   async function supprimerActu(a) {
     if (!confirm(`Supprimer l'actualité « ${a.titre} » ?`)) return;
     try {
-      await modifierSite(s => { s.actualites = s.actualites.filter(x => (x.id || x.titre) !== (a.id || a.titre)); }, `Actualité supprimée : ${a.titre}`);
+      const { error } = await sb.rpc('catalogue_actu_supprimer', { p_id: a.id });
+      if (error) throw erreurGerant(error);
+      site.actualites = site.actualites.filter(x => x.id !== a.id);
       afficherSite();
       statut('a-statut', 'Actualité supprimée.', 'ok');
     } catch (err) { statut('a-statut', err.message, 'erreur'); }
@@ -1231,12 +1145,13 @@
     bouton.disabled = true;
     bouton.replaceChildren(chargeur(), ' Publication…');
     try {
-      const d = new Date();
-      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      await modifierSite(s => { s.actualites.push({ id: nouvelId(), date, titre, texte }); }, `Actualité : ${titre}`);
+      const { error } = await sb.rpc('catalogue_actu_publier', { p_titre: titre, p_texte: texte });
+      if (error) throw erreurGerant(error);
+      const r = await sb.from('catalogue_actualites').select('id,date,titre,texte');
+      if (!r.error) site.actualites = r.data;
       afficherSite();
       $('form-actu').reset();
-      statut('a-statut', 'Actualité publiée. Visible par tous d\'ici une minute.', 'ok');
+      statut('a-statut', 'Actualité publiée.', 'ok');
     } catch (err) { statut('a-statut', err.message, 'erreur'); }
     finally { bouton.disabled = false; bouton.textContent = 'Publier l\'actualité'; }
   });
@@ -1247,7 +1162,11 @@
   if (matchMedia('(max-width: 820px)').matches && !affichageMemorise) criteres.filtres = false;
   $('crit-par-page').value = String(criteres.parPage);
   appliquerFiltresVisibles(); appliquerVue();
-  ['cp-mdp', 'cp-mdp2', 'pf-mdp', 'pf-mdp2', 'c-jeton'].forEach(id => ajouterOeil($(id)));
+  ['cp-mdp', 'cp-mdp2', 'pf-mdp', 'pf-mdp2'].forEach(id => ajouterOeil($(id)));
+  if (window.EntarshFond) {
+    $('choix-fond').value = window.EntarshFond.mode;
+    $('choix-fond').addEventListener('change', e => window.EntarshFond.choisir(e.target.value));
+  } else $('choix-fond').closest('label').hidden = true;
   changerVue();
   charger();
 })();

@@ -1,5 +1,5 @@
 {
- "version": "0.7.1",
+ "version": "0.8.0",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,28 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.8.0",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "amelioration",
+     "texte": "Gestion directe pour le gérant : plus besoin de jeton GitHub, les fichiers et images sont enregistrés dans le stockage du site"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Les éléments et actualités publiés sont visibles immédiatement"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Choix du fond d'écran : Carrés lumineux ou Tetris"
+    },
+    {
+     "type": "securite",
+     "texte": "Le jeton GitHub enregistré auparavant est effacé de la base"
+    }
+   ]
+  },
   {
    "version": "0.7.1",
    "date": "2026-10-11",
