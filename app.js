@@ -548,12 +548,20 @@
   }
 
   // ---------- Fiche détaillée d'un élément ----------
+  // Taille d'un élément : une seule valeur, ou « min – max » si les versions ont des tailles différentes
+  function tailleVersions(e) {
+    const vs = versionsDe(e), tailles = vs.map(v => v.fichier?.taille).filter(Boolean);
+    if (!tailles.length) return vs.some(v => v.fichier?.url) ? 'Lien externe' : null;
+    const min = Math.min(...tailles), max = Math.max(...tailles);
+    return min === max ? tailleLisible(min) : `${tailleLisible(min)} – ${tailleLisible(max)}`;
+  }
   function piedVersions(e) {
     const vs = versionsDe(e);
     const plateformes = [...new Set(vs.map(v => v.plateforme).filter(p => p && p !== 'autre'))];
-    if (plateformes.length) return el('span', { class: 'pied-plateformes', title: plateformes.map(p => PLATEFORMES[p]).join(', ') }, ...plateformes.map(iconePlateforme));
-    const f = vs[0]?.fichier || {};
-    return f.taille ? el('span', { title: 'Taille' }, icone('disque'), tailleLisible(f.taille)) : f.url ? el('span', {}, icone('disque'), 'Lien externe') : null;
+    const taille = tailleVersions(e);
+    return el('span', { class: 'pied-droite' },
+      plateformes.length ? el('span', { class: 'pied-plateformes', title: plateformes.map(p => PLATEFORMES[p]).join(', ') }, ...plateformes.map(iconePlateforme)) : null,
+      taille ? el('span', { title: 'Taille' }, icone('disque'), taille) : null);
   }
   // Bouton de téléchargement d'une version
   function boutonVersion(e, v, classe) {
@@ -580,8 +588,8 @@
       item('telecharger', 'Téléchargements', v('telechargements')),
       item('oeil', 'Vues', v('vues')),
       item('version', 'Version', e.version ? e.version.replace(/^v/i, '') : '—'),
-      versionsDe(e).length > 1 ? item('disque', 'Versions', String(versionsDe(e).length))
-        : item('disque', 'Taille', e.fichier?.taille ? tailleLisible(e.fichier.taille) : e.fichier?.url ? 'Lien externe' : '—'));
+      item('disque', 'Taille', tailleVersions(e) || '—'),
+      versionsDe(e).length > 1 ? item('telecharger', 'Versions', String(versionsDe(e).length)) : null);
   }
   function etatTelechargement(e) {
     const quand = mesTelechargements[e.id];

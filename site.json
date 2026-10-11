@@ -1,5 +1,5 @@
 {
- "version": "0.9.0",
+ "version": "0.9.1",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,16 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.9.1",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "correction",
+     "texte": "La taille des fichiers s'affiche de nouveau sur les fiches, à côté des icônes de plateformes"
+    }
+   ]
+  },
   {
    "version": "0.9.0",
    "date": "2026-10-11",
