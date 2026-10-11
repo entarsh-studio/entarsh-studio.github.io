@@ -54,7 +54,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=0.6.0">
+<link rel="stylesheet" href="style.css?v=0.7.0">
 </head>
 <body>
 <canvas id="fond" aria-hidden="true"></canvas>
@@ -133,7 +133,12 @@
     <!-- Vue Catalogue -->
     <section id="vue-catalogue" class="vue">
       <div class="barre-outils">
-        <p id="nb-resultats" class="nb-resultats">—</p>
+        <div class="barre-gauche">
+          <p id="nb-resultats" class="nb-resultats">—</p>
+          <button id="ajouter-element" type="button" class="bouton-principal petit" hidden>
+            <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Ajouter un élément
+          </button>
+        </div>
         <div class="outils">
           <label class="outil"><span class="sr">Période</span>
             <select id="crit-periode">
@@ -327,17 +332,46 @@
     </form>
   </section>
   <section id="compte-en-ligne" class="p-vue" hidden>
-    <div class="compte-carte">
-      <span class="avatar-compte grand" aria-hidden="true"></span>
-      <div><strong id="cp-nom"></strong><span id="cp-rang"></span></div>
+    <div class="profil-tete">
+      <div class="profil-avatar-zone">
+        <span id="pf-avatar" class="avatar-compte grand" aria-hidden="true"></span>
+        <label class="lien-discret profil-changer-image">Changer l'image<input id="pf-image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
+        <button type="button" class="lien-discret" id="pf-retirer-image" hidden>Retirer l'image</button>
+      </div>
+      <div class="profil-identite">
+        <strong id="cp-nom"></strong>
+        <span id="cp-rang"></span>
+        <span id="cp-depuis" class="aide"></span>
+      </div>
     </div>
-    <p class="aide" id="cp-likes"></p>
-    <div class="ligne actions"><button type="button" class="bouton-contour" id="cp-deconnexion">Se déconnecter</button></div>
+
+    <div id="pf-stats" class="profil-stats"></div>
+    <div id="pf-recus" class="profil-recus" hidden></div>
+
+    <form id="form-profil" class="formulaire profil-bloc">
+      <h3>Modifier mon profil</h3>
+      <label>Pseudo de connexion<input id="pf-pseudo" maxlength="20" spellcheck="false" autocapitalize="none" required></label>
+      <p id="pf-gerant-note" class="aide" hidden>En tant que gérant, tu apparais sur le site sous le nom « Entarsh Studio ». Ce pseudo sert seulement à te connecter.</p>
+      <p id="pf-statut" class="statut" role="status"></p>
+      <div class="ligne actions"><button type="submit" class="bouton" id="pf-valider">Enregistrer</button></div>
+    </form>
+
+    <form id="form-mdp" class="formulaire profil-bloc">
+      <h3>Changer de mot de passe</h3>
+      <div class="ligne">
+        <label>Nouveau mot de passe<input id="pf-mdp" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Confirmer<input id="pf-mdp2" type="password" autocomplete="new-password" minlength="8" required></label>
+      </div>
+      <p id="mdp-statut" class="statut" role="status"></p>
+      <div class="ligne actions"><button type="submit" class="bouton-contour" id="mdp-valider">Changer le mot de passe</button></div>
+    </form>
+
+    <div class="ligne actions profil-bas"><button type="button" class="bouton-contour" id="cp-deconnexion">Se déconnecter</button></div>
   </section>
 </dialog>
 
 <script src="supabase.js?v=2"></script>
-<script src="fond.js?v=0.6.0"></script>
-<script src="app.js?v=0.6.0"></script>
+<script src="fond.js?v=0.7.0"></script>
+<script src="app.js?v=0.7.0"></script>
 </body>
 </html>

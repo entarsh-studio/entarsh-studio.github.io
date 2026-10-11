@@ -36,18 +36,21 @@
 
   async function chargerStats() {
     try {
-      const { data, error } = await sb.from('catalogue_stats').select('id,telechargements,likes,vues');
+      let { data, error } = await sb.from('catalogue_stats').select('id,telechargements,likes,vues,commentaires');
+      if (error) ({ data, error } = await sb.from('catalogue_stats').select('id,telechargements,likes,vues'));
       if (error) return;
       stats = Object.fromEntries(data.map(x => [x.id, x]));
       statsDispo = true;
     } catch {}
   }
+  let jetonAcces = null;     // jeton de session du compte connecté (pour les compteurs)
   function rpc(nom, corps) {
     return fetch(`${SB_URL}/rest/v1/rpc/${nom}`, { method: 'POST', keepalive: true,
-      headers: { apikey: SB_CLE, Authorization: `Bearer ${SB_CLE}`, 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+      headers: { apikey: SB_CLE, Authorization: `Bearer ${jetonAcces || SB_CLE}`, 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
   }
   function compterTelechargement(id) {
     mesTelechargements[id] = new Date().toISOString(); ecrireLocal('entarsh-catalogue-telechargements', mesTelechargements);
+    if (compte) { (compte.telechargements ||= {})[id] = mesTelechargements[id]; compte.nb_telechargements = (compte.nb_telechargements || 0) + 1; }
     if (!statsDispo) return;
     (stats[id] ||= { id, telechargements: 0, likes: 0, vues: 0 }).telechargements++;
     rpc('catalogue_compter', { p_id: id, p_type: 'telechargement' }).catch(() => {});
@@ -79,29 +82,41 @@
   // ---------- Comptes ----------
   async function chargerCompte() {
     const { data: { session: s } } = await sb.auth.getSession();
+    jetonAcces = s?.access_token || null;
     if (!s) { compte = null; mesLikes = new Set(); majBoutonCompte(); return; }
     const { data, error } = await sb.rpc('catalogue_moi');
     compte = !error && data ? data : null;
     mesLikes = new Set(compte?.likes || []);
+    if (compte?.telechargements) Object.assign(mesTelechargements, compte.telechargements);
     if (!compte && !error) await sb.auth.signOut();   // session sans profil catalogue
     majBoutonCompte();
   }
   async function deconnecter() {
     await sb.auth.signOut().catch(() => {});
-    compte = null; mesLikes = new Set(); session = null;
-    majBoutonCompte(); afficher(); rafraichirFiche();
+    compte = null; mesLikes = new Set(); session = null; jetonAcces = null;
+    majBoutonCompte(); afficher(); rafraichirFiche(true);
   }
   function initiale(p) { return (p || '?').charAt(0).toUpperCase(); }
+  const nomAffiche = c => c ? (c.rang === 'gerant' ? 'Entarsh Studio' : c.pseudo) : '';
+  // Remplit un avatar : image du profil, icône du studio pour le gérant, sinon initiale
+  function remplirAvatar(zone, { avatar, nom, gerant }) {
+    zone.classList.toggle('studio', !!gerant);
+    zone.replaceChildren(gerant ? el('img', { src: 'icone-192.png', alt: '' }) : avatar ? el('img', { src: avatar, alt: '' }) : initiale(nom));
+  }
   function majBoutonCompte() {
     const b = $('bouton-compte');
     b.classList.toggle('connecte', !!compte);
-    b.querySelector('.avatar-compte').textContent = compte ? initiale(compte.pseudo) : '';
-    b.querySelector('.nom-compte').textContent = compte ? compte.pseudo : 'Se connecter';
+    if (compte) remplirAvatar(b.querySelector('.avatar-compte'), { avatar: compte.avatar, nom: compte.pseudo, gerant: estGerant() });
+    b.querySelector('.nom-compte').textContent = compte ? nomAffiche(compte) : 'Se connecter';
     $('ouvrir-gestion').hidden = !estGerant();
+    $('ajouter-element').hidden = !estGerant();
   }
-  function rafraichirFiche() {
+  function rafraichirFiche(complet) {
     const h = decodeURIComponent(location.hash.slice(1));
-    if (h.startsWith('element/')) { const e = catalogue.elements.find(x => x.id === h.slice(8)); if (e) majStatsFiche(e); }
+    if (!h.startsWith('element/')) return;
+    const e = catalogue.elements.find(x => x.id === h.slice(8));
+    if (!e) return;
+    if (complet) afficherFiche(e.id, true); else majStatsFiche(e);
   }
 
   let modeCompte = 'connexion';
@@ -122,13 +137,8 @@
     $('compte-en-ligne').hidden = !compte;
     $('compte-titre').textContent = compte ? 'Mon compte' : 'Compte Entarsh Catalogue';
     $('compte-raison').hidden = !raison; $('compte-raison').textContent = raison || '';
-    if (compte) {
-      $('cp-nom').textContent = compte.pseudo;
-      $('cp-rang').textContent = compte.rang === 'gerant' ? 'Gérant' : 'Membre';
-      $('fenetre-compte').querySelector('#compte-en-ligne .avatar-compte').textContent = initiale(compte.pseudo);
-      const n = mesLikes.size;
-      $('cp-likes').textContent = n ? `Tu as aimé ${n} élément${n > 1 ? 's' : ''}.` : "Tu n'as encore aimé aucun élément.";
-    } else {
+    if (compte) afficherProfil();
+    else {
       modeFormulaire(modeCompte);
       $('cp-mdp').value = ''; $('cp-mdp2').value = '';
     }
@@ -139,6 +149,108 @@
   $('fermer-compte').addEventListener('click', () => $('fenetre-compte').close());
   $('fenetre-compte').addEventListener('click', e => { if (e.target === $('fenetre-compte')) $('fenetre-compte').close(); });
   $('cp-deconnexion').addEventListener('click', async () => { await deconnecter(); $('fenetre-compte').close(); });
+
+  // ---------- Profil ----------
+  const nombre = n => Number(n || 0).toLocaleString('fr-FR');
+  function afficherProfil() {
+    const g = estGerant();
+    $('cp-nom').textContent = nomAffiche(compte);
+    $('cp-rang').textContent = g ? `Gérant · connecté en tant que ${compte.pseudo}` : 'Membre';
+    $('cp-depuis').textContent = compte.cree_le ? `Membre depuis le ${dateLisible(compte.cree_le)}` : '';
+    remplirAvatar($('pf-avatar'), { avatar: compte.avatar, nom: compte.pseudo, gerant: g });
+    $('pf-image').closest('label').hidden = g;
+    $('pf-retirer-image').hidden = g || !compte.avatar;
+    const carte = (ic, nom, val) => el('div', { class: 'profil-stat' }, icone(ic), el('strong', {}, val), el('span', {}, nom));
+    $('pf-stats').replaceChildren(
+      carte('pouce', "J'aime donnés", nombre(mesLikes.size)),
+      carte('telecharger', 'Téléchargements', nombre(compte.nb_telechargements)),
+      carte('bulle', 'Commentaires', nombre(compte.nb_commentaires)));
+    $('pf-recus').hidden = !(g && compte.recus);
+    if (g && compte.recus) $('pf-recus').replaceChildren(el('h3', {}, 'Sur tout le catalogue'),
+      el('div', { class: 'profil-stats' },
+        carte('pouce', "J'aime reçus", nombre(compte.recus.likes)),
+        carte('telecharger', 'Téléchargements', nombre(compte.recus.telechargements)),
+        carte('oeil', 'Vues', nombre(compte.recus.vues)),
+        carte('bulle', 'Commentaires', nombre(compte.recus.commentaires))));
+    $('pf-pseudo').value = compte.pseudo;
+    $('pf-gerant-note').hidden = !g;
+    statut('pf-statut', ''); statut('mdp-statut', '');
+    $('pf-mdp').value = ''; $('pf-mdp2').value = '';
+  }
+  const ERREURS_PROFIL = { pseudo_pris: 'Ce pseudo est déjà pris.', pseudo_invalide: 'Pseudo invalide : 3 à 20 caractères (lettres sans accent, chiffres, - ou _).', image_invalide: 'Image trop lourde ou invalide.' };
+  async function enregistrerProfil(champs, idStatut) {
+    const { data, error } = await sb.rpc('catalogue_modifier_profil', { p_pseudo: null, p_avatar: null, p_changer_avatar: false, ...champs });
+    if (error) {
+      const code = (error.message.match(/pseudo_\w+|image_invalide/) || [])[0];
+      statut(idStatut, ERREURS_PROFIL[code] || (/function|schema/i.test(error.message) ? "Le profil n'est pas encore activé sur le serveur." : 'Enregistrement impossible.'), 'erreur');
+      return false;
+    }
+    Object.assign(compte, data); majBoutonCompte(); afficherProfil();
+    return true;
+  }
+  $('form-profil').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const pseudo = $('pf-pseudo').value.trim();
+    if (!/^[A-Za-z0-9_-]{3,20}$/.test(pseudo)) return statut('pf-statut', ERREURS_PROFIL.pseudo_invalide, 'erreur');
+    if (pseudo === compte.pseudo) return statut('pf-statut', 'Rien à changer.', '');
+    if (await enregistrerProfil({ p_pseudo: pseudo }, 'pf-statut')) statut('pf-statut', 'Profil enregistré. Utilise ce pseudo pour te connecter.', 'ok');
+  });
+  // Image : recadrée en carré 160 px, compressée (quelques Ko)
+  function imageVersAvatar(fichier) {
+    return new Promise((ok, ko) => {
+      const img = new Image(), url = URL.createObjectURL(fichier);
+      img.onload = () => {
+        const c = document.createElement('canvas'); c.width = c.height = 160;
+        const cote = Math.min(img.width, img.height);
+        c.getContext('2d').drawImage(img, (img.width - cote) / 2, (img.height - cote) / 2, cote, cote, 0, 0, 160, 160);
+        URL.revokeObjectURL(url);
+        let d = c.toDataURL('image/webp', .85);
+        if (!d.startsWith('data:image/webp')) d = c.toDataURL('image/jpeg', .85);
+        ok(d);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); ko(new Error('Image illisible.')); };
+      img.src = url;
+    });
+  }
+  $('pf-image').addEventListener('change', async ev => {
+    const f = ev.target.files[0]; ev.target.value = '';
+    if (!f) return;
+    if (f.size > 10 * 1024 * 1024) return statut('pf-statut', 'Image trop lourde (10 Mo maximum).', 'erreur');
+    try {
+      statut('pf-statut', 'Envoi de l\'image…');
+      if (await enregistrerProfil({ p_avatar: await imageVersAvatar(f), p_changer_avatar: true }, 'pf-statut')) { statut('pf-statut', 'Image de profil mise à jour.', 'ok'); afficher(); }
+    } catch (err) { statut('pf-statut', err.message, 'erreur'); }
+  });
+  $('pf-retirer-image').addEventListener('click', async () => {
+    if (await enregistrerProfil({ p_avatar: null, p_changer_avatar: true }, 'pf-statut')) statut('pf-statut', 'Image retirée.', 'ok');
+  });
+  $('form-mdp').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const m = $('pf-mdp').value;
+    if (m.length < 8) return statut('mdp-statut', 'Au moins 8 caractères.', 'erreur');
+    if (m !== $('pf-mdp2').value) return statut('mdp-statut', 'Les deux mots de passe ne sont pas identiques.', 'erreur');
+    const b = $('mdp-valider'); b.disabled = true;
+    const { error } = await sb.auth.updateUser({ password: m });
+    b.disabled = false;
+    if (error) return statut('mdp-statut', /same|different/i.test(error.message) ? "C'est déjà ton mot de passe." : 'Changement impossible, réessaie.', 'erreur');
+    $('pf-mdp').value = ''; $('pf-mdp2').value = '';
+    statut('mdp-statut', 'Mot de passe changé.', 'ok');
+  });
+
+  // ---------- Bouton « œil » pour afficher les mots de passe ----------
+  function ajouterOeil(input) {
+    const zone = el('span', { class: 'champ-oeil' });
+    input.replaceWith(zone);
+    const bouton = el('button', { type: 'button', class: 'oeil', 'aria-label': 'Afficher', title: 'Afficher', 'aria-pressed': 'false', onclick: () => {
+      const voir = input.type === 'password';
+      input.type = voir ? 'text' : 'password';
+      bouton.setAttribute('aria-pressed', String(voir));
+      bouton.title = voir ? 'Masquer' : 'Afficher'; bouton.setAttribute('aria-label', bouton.title);
+      bouton.replaceChildren(icone(voir ? 'oeilBarre' : 'oeil'));
+      input.focus();
+    } }, icone('oeil'));
+    zone.append(input, bouton);
+  }
 
   const MESSAGES_SB = {
     pseudo_pris: 'Ce pseudo est déjà pris.', pseudo_invalide: 'Pseudo invalide : 3 à 20 caractères (lettres sans accent, chiffres, - ou _).',
@@ -173,13 +285,16 @@
       }
       await chargerCompte();
       if (!compte) throw new Error('Connexion impossible pour le moment.');
-      afficher(); rafraichirFiche();
+      afficher(); rafraichirFiche(true);
       ouvrirCompte();
       statut('cp-statut', '');
     } catch (err) { statut('cp-statut', err.message, 'erreur'); }
     finally { bouton.disabled = false; bouton.textContent = texte; }
   });
-  sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' && compte) { compte = null; mesLikes = new Set(); majBoutonCompte(); } });
+  sb.auth.onAuthStateChange((ev, s) => {
+    jetonAcces = s?.access_token || null;
+    if (ev === 'SIGNED_OUT' && compte) { compte = null; mesLikes = new Set(); majBoutonCompte(); }
+  });
 
 
   // ---------- Utilitaires ----------
@@ -313,6 +428,10 @@
     telecharger: 'M12 4v11m0 0-4-4m4 4 4-4M5 20h14',
     pouce: 'M7 11v9H4v-9h3Zm0 0 4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7',
     oeil: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+    oeilBarre: 'M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2',
+    crayon: 'M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4',
+    poubelle: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+    bulle: 'M4 5h16v11H9l-5 4V5Z',
   };
   const icone = n => { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); sv.classList.add('ic');
     const pa = document.createElementNS('http://www.w3.org/2000/svg', 'path'); pa.setAttribute('d', ICONES[n]); sv.append(pa); return sv; };
@@ -371,8 +490,11 @@
     const f = e.fichier || {};
     const href = f.url || (f.chemin ? encoderChemin(f.chemin) : null);
     const lien = `#element/${encodeURIComponent(e.id)}`;
-    return el('article', { class: 'carte', style: `--i:${Math.min(i, 12)}` },
+    return el('article', { class: 'carte', style: `--i:${Math.min(i, 12)};--type:${coul}` },
       el('a', { class: 'carte-image', href: lien, 'aria-label': `Voir ${e.nom}` }, image),
+      estGerant() ? el('div', { class: 'carte-outils' },
+        el('button', { type: 'button', class: 'outil-rond', title: 'Modifier', 'aria-label': `Modifier ${e.nom}`, onclick: () => gererElement(e, 'modifier') }, icone('crayon')),
+        el('button', { type: 'button', class: 'outil-rond danger', title: 'Supprimer', 'aria-label': `Supprimer ${e.nom}`, onclick: () => gererElement(e, 'supprimer') }, icone('poubelle'))) : null,
       el('div', { class: 'carte-corps' },
         el('h2', {}, el('a', { href: lien }, e.nom)),
         el('div', { class: 'carte-auteur' }, el('img', { src: 'icone-48.png', alt: '', width: 16, height: 16 }), e.auteur || AUTEUR_DEFAUT),
@@ -427,7 +549,8 @@
   function ligneInfo(nom, valeur, titre) {
     return el('div', { class: 'fiche-info' }, el('span', {}, nom), el('strong', { title: titre || null }, valeur));
   }
-  function afficherFiche(id) {
+  let ficheAffichee = null;
+  function afficherFiche(id, garderOnglet) {
     const zone = $('vue-element');
     const e = catalogue.elements.find(x => x.id === id);
     if (!e) {
@@ -438,7 +561,7 @@
     compterVue(e.id);
     const coul = couleurType(e.type);
     const { f } = lienTelechargement(e);
-    let ongletActif = 'description';
+    let ongletActif = garderOnglet && ficheAffichee?.id === e.id ? ficheAffichee.onglet : 'description';
     const corpsOnglet = el('div', { class: 'fiche-onglet-corps' });
     const onglets = el('div', { class: 'fiche-onglets', role: 'tablist' });
     const contenus = {
@@ -459,15 +582,17 @@
             el('span', {}, [e.version ? 'Version ' + e.version.replace(/^v/i, '') : null, f.taille ? tailleLisible(f.taille) : f.url ? 'Lien externe' : null,
               'Mis à jour le ' + dateLisible(e.modifie_le || e.ajoute_le || '')].filter(Boolean).join(' · '))),
           boutonTelecharger(e, 'bouton-principal', 'Télécharger'))),
+      commentaires: () => blocCommentaires(e, () => montrer('commentaires')),
     };
-    const titres = { description: 'Description', fichiers: 'Fichiers' };
+    const titres = { description: 'Description', fichiers: 'Fichiers', commentaires: 'Commentaires' };
+    const comptes = { fichiers: () => f.nom || f.url ? '1' : '0', commentaires: () => statsDispo && 'commentaires' in (stats[e.id] || { commentaires: 0 }) ? String(stat(e.id, 'commentaires')) : null };
     function montrer(nom) {
-      ongletActif = nom;
+      ongletActif = nom; ficheAffichee = { id: e.id, onglet: nom };
       onglets.replaceChildren(...Object.keys(contenus).map(k => el('button', { type: 'button', role: 'tab', class: 'fiche-onglet', 'aria-selected': String(k === ongletActif), onclick: () => montrer(k) },
-        titres[k], k === 'fichiers' ? el('span', { class: 'compte-onglet' }, f.nom || f.url ? '1' : '0') : null)));
+        titres[k], comptes[k]?.() != null ? el('span', { class: 'compte-onglet' }, comptes[k]()) : null)));
       corpsOnglet.replaceChildren(contenus[nom]());
     }
-    montrer('description');
+    montrer(ongletActif);
 
     const aime = mesLikes.has(e.id);
     const boutonAime = el('button', { type: 'button', class: 'bouton-contour bouton-aime' + (aime ? ' actif' : ''), 'aria-pressed': String(aime),
@@ -480,7 +605,10 @@
         el('span', { class: 'actuel' }, e.nom)),
       el('div', { class: 'fiche-entete' },
         el('h2', { class: 'fiche-titre' }, e.nom),
-        el('div', { class: 'fiche-boutons' }, boutonAime, boutonTelecharger(e, 'bouton-principal', 'Télécharger'))),
+        el('div', { class: 'fiche-boutons' },
+          estGerant() ? el('button', { type: 'button', class: 'bouton-contour', onclick: () => gererElement(e, 'modifier') }, icone('crayon'), 'Modifier') : null,
+          estGerant() ? el('button', { type: 'button', class: 'bouton-contour danger', onclick: () => gererElement(e, 'supprimer') }, icone('poubelle'), 'Supprimer') : null,
+          boutonAime, boutonTelecharger(e, 'bouton-principal', 'Télécharger'))),
       blocStats(e),
       el('div', { class: 'fiche-media' },
         e.image ? el('a', { href: encoderChemin(e.image), target: '_blank', rel: 'noopener', class: 'fiche-image', title: 'Voir en grand' }, el('img', { src: encoderChemin(e.image), alt: `Image de ${e.nom}` }))
@@ -493,6 +621,84 @@
       onglets,
       corpsOnglet);
   }
+
+  // ---------- Commentaires ----------
+  function blocCommentaires(e, rafraichir) {
+    const zone = el('div', { class: 'commentaires' });
+    const liste = el('ol', { class: 'liste-commentaires' }, el('li', { class: 'commentaires-etat' }, chargeur(), ' Chargement des commentaires…'));
+    let formulaire;
+    if (compte) {
+      const texte = el('textarea', { rows: 3, maxlength: 1000, placeholder: 'Écris un commentaire…', 'aria-label': 'Ton commentaire' });
+      const compteur = el('span', { class: 'aide' }, '0 / 1000');
+      const etat = el('p', { class: 'statut', role: 'status' });
+      const envoyer = el('button', { type: 'submit', class: 'bouton' }, 'Publier');
+      texte.addEventListener('input', () => { compteur.textContent = `${texte.value.length} / 1000`; });
+      const avatar = el('span', { class: 'avatar-compte' }); remplirAvatar(avatar, { avatar: compte.avatar, nom: compte.pseudo, gerant: estGerant() });
+      formulaire = el('form', { class: 'nouveau-commentaire', onsubmit: async ev => {
+        ev.preventDefault();
+        if (!texte.value.trim()) return;
+        envoyer.disabled = true; envoyer.replaceChildren(chargeur(), ' Envoi…');
+        const { error } = await sb.rpc('catalogue_commenter', { p_id: e.id, p_texte: texte.value });
+        envoyer.disabled = false; envoyer.textContent = 'Publier';
+        if (error) {
+          const m = /trop_rapide/.test(error.message) ? 'Attends quelques secondes entre deux commentaires.' : /non_connecte|JWT/.test(error.message) ? 'Ta session a expiré, reconnecte-toi.' : /function|schema/i.test(error.message) ? "Les commentaires ne sont pas encore activés sur le serveur." : "Le commentaire n'a pas pu être publié.";
+          etat.textContent = m; etat.className = 'statut erreur'; return;
+        }
+        (stats[e.id] ||= { id: e.id, telechargements: 0, likes: 0, vues: 0, commentaires: 0 }).commentaires = stat(e.id, 'commentaires') + 1;
+        compte.nb_commentaires = (compte.nb_commentaires || 0) + 1;
+        rafraichir();
+      } }, avatar, el('div', { class: 'nouveau-commentaire-corps' }, texte, el('div', { class: 'ligne actions' }, compteur, envoyer), etat));
+    } else {
+      formulaire = el('div', { class: 'commentaire-connexion' }, 'Connecte-toi pour participer à la discussion. ',
+        el('button', { type: 'button', class: 'bouton-contour', onclick: () => ouvrirCompte('Connecte-toi ou crée un compte pour commenter.') }, 'Se connecter'));
+    }
+    zone.append(el('h3', {}, 'Commentaires'), formulaire, liste);
+    sb.rpc('catalogue_commentaires_lire', { p_id: e.id }).then(({ data, error }) => {
+      if (error) { liste.replaceChildren(el('li', { class: 'commentaires-etat' }, /function|schema/i.test(error.message) ? 'Les commentaires ne sont pas encore activés sur le serveur.' : 'Impossible de charger les commentaires.')); return; }
+      if (!data.length) { liste.replaceChildren(el('li', { class: 'commentaires-etat' }, 'Aucun commentaire pour le moment. Sois le premier !')); return; }
+      liste.replaceChildren(...data.map((c, i) => {
+        const av = el('span', { class: 'avatar-compte' }); remplirAvatar(av, { avatar: c.avatar, nom: c.auteur, gerant: c.gerant });
+        return el('li', { class: 'commentaire' + (c.gerant ? ' du-studio' : ''), style: `--i:${Math.min(i, 10)}` }, av,
+          el('div', { class: 'commentaire-corps' },
+            el('div', { class: 'commentaire-tete' }, el('strong', {}, c.auteur), c.gerant ? el('span', { class: 'badge-studio' }, 'Studio') : null,
+              el('time', { datetime: c.cree_le, title: dateLisible(c.cree_le) }, tempsRelatif(c.cree_le)),
+              c.a_moi || estGerant() ? el('button', { type: 'button', class: 'lien-discret supprimer-commentaire', onclick: async () => {
+                if (!confirm('Supprimer ce commentaire ?')) return;
+                const { error } = await sb.rpc('catalogue_commentaire_supprimer', { p_cid: c.id });
+                if (error) return alert('Suppression impossible.');
+                if (stats[e.id]) stats[e.id].commentaires = Math.max(0, stat(e.id, 'commentaires') - 1);
+                if (c.a_moi && compte) compte.nb_commentaires = Math.max(0, (compte.nb_commentaires || 1) - 1);
+                rafraichir();
+              } }, 'Supprimer') : null),
+            el('p', {}, c.texte)));
+      }));
+    });
+    return zone;
+  }
+
+  // ---------- Raccourcis du gérant : ajouter / modifier / supprimer directement ----------
+  async function preparerGestion() {
+    if (!estGerant()) return false;
+    if (session) return true;
+    try {
+      const infos = await chargerJeton();
+      if (!infos) { afficherPanneau(); dialogue.showModal(); statut('c-statut', 'Relie d\'abord GitHub (une seule fois).', ''); return false; }
+      infos.login = await verifierJeton(infos.jeton, infos.proprio, infos.depot);
+      session = infos;
+      return true;
+    } catch (err) { afficherPanneau(); dialogue.showModal(); statut('c-statut', err.message + ' Enregistre un nouveau jeton.', 'erreur'); return false; }
+  }
+  async function gererElement(e, action) {
+    if (!(await preparerGestion())) return;
+    afficherPanneau();
+    if (action === 'ajouter') { viderFormulaire(); dialogue.showModal(); setTimeout(() => $('f-nom').focus(), 50); return; }
+    if (action === 'modifier') { dialogue.showModal(); modifierElement(e); return; }
+    if (action === 'supprimer') {
+      if (await supprimerElement(e)) { if (location.hash.includes('element/')) location.hash = '#catalogue'; }
+      else if (!dialogue.open && $('f-statut').classList.contains('erreur')) { dialogue.showModal(); }
+    }
+  }
+  $('ajouter-element').addEventListener('click', () => gererElement(null, 'ajouter'));
 
   // ---------- Mises à jour (frise) ----------
   const TYPES_MAJ = {
@@ -711,17 +917,10 @@
   $('ouvrir-gestion').addEventListener('click', async () => {
     if (!estGerant()) return;
     statut('c-statut', '');
-    const btn = $('ouvrir-gestion');
-    if (!session) {
-      btn.disabled = true;
-      try {
-        const infos = await chargerJeton();
-        if (infos) { infos.login = await verifierJeton(infos.jeton, infos.proprio, infos.depot); session = infos; }
-      } catch (err) { afficherPanneau(); dialogue.showModal(); statut('c-statut', err.message + ' Enregistre un nouveau jeton.', 'erreur'); btn.disabled = false; return; }
-      btn.disabled = false;
-    }
-    afficherPanneau();
-    dialogue.showModal();
+    const btn = $('ouvrir-gestion'); btn.disabled = true;
+    const pret = await preparerGestion();
+    btn.disabled = false;
+    if (pret) { afficherPanneau(); dialogue.showModal(); }
   });
   $('fermer-gestion').addEventListener('click', () => dialogue.close());
   dialogue.addEventListener('click', e => { if (e.target === dialogue) dialogue.close(); });
@@ -821,7 +1020,7 @@
   }
 
   async function supprimerElement(e) {
-    if (!confirm(`Supprimer « ${e.nom} » du catalogue et ses fichiers ?`)) return;
+    if (!confirm(`Supprimer « ${e.nom} » du catalogue et ses fichiers ?`)) return false;
     try {
       progression('Suppression…');
       await modifierCatalogue(c => { c.elements = c.elements.filter(x => x.id !== e.id); }, `Catalogue : suppression de ${e.nom}`);
@@ -830,7 +1029,8 @@
       if ($('f-id').value === e.id) viderFormulaire();
       afficher(); listeGestion(); remplirTypes();
       statut('f-statut', `« ${e.nom} » supprimé. Le site public se met à jour d'ici une minute.`, 'ok');
-    } catch (err) { statut('f-statut', err.message, 'erreur'); }
+      return true;
+    } catch (err) { statut('f-statut', err.message, 'erreur'); return false; }
     finally { progression(null); }
   }
 
@@ -910,7 +1110,7 @@
 
       for (const p of aSupprimer) await supprimer(p, `Remplacement d'un fichier de ${nom}`).catch(() => {});
 
-      afficher(); listeGestion(); remplirTypes();
+      afficher(); listeGestion(); remplirTypes(); rafraichirFiche(true);
       viderFormulaire();
       statut('f-statut', `« ${nom} » publié. Visible par tous d'ici une minute (le temps que GitHub Pages se mette à jour).`, 'ok');
     } catch (err) {
@@ -959,6 +1159,7 @@
   if (matchMedia('(max-width: 820px)').matches && !affichageMemorise) criteres.filtres = false;
   $('crit-par-page').value = String(criteres.parPage);
   appliquerFiltresVisibles(); appliquerVue();
+  ['cp-mdp', 'cp-mdp2', 'pf-mdp', 'pf-mdp2', 'c-jeton'].forEach(id => ajouterOeil($(id)));
   changerVue();
   charger();
 })();

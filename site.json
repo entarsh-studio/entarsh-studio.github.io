@@ -1,5 +1,5 @@
 {
- "version": "0.6.0",
+ "version": "0.7.0",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,32 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.7.0",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "nouveau",
+     "texte": "Profil modifiable : image, pseudo, mot de passe, et tes statistiques (J'aime, téléchargements, commentaires)"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Commentaires sous chaque élément (compte nécessaire)"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Bouton pour afficher ou masquer les mots de passe"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Le gérant apparaît comme Entarsh Studio et peut ajouter, modifier ou supprimer les éléments directement depuis le catalogue et les fiches"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Effet au survol des fiches du catalogue"
+    }
+   ]
+  },
   {
    "version": "0.6.0",
    "date": "2026-10-11",
