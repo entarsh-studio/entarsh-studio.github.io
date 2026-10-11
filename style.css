@@ -12,6 +12,8 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; }
+/* Réserve toujours la place de la barre de défilement : la page ne se décale plus en changeant d'onglet */
+html { scrollbar-gutter: stable; overflow-y: scroll; }
 body {
   background: var(--fond); color: var(--texte);
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -137,7 +139,7 @@ svg { flex-shrink: 0; }
 /* Barre d'outils au-dessus des résultats */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .barre-outils { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-.nb-resultats { margin: 0; font-size: 1.05rem; font-weight: 600; }
+.nb-resultats { margin: 0; font-size: 1.05rem; font-weight: 600; line-height: 34px; }
 .outils { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .outil { display: block; }
 .outil select {
@@ -194,7 +196,7 @@ svg { flex-shrink: 0; }
 .page-trou { align-self: center; color: var(--doux); padding: 0 4px; }
 
 /* ---------- Actualités & mises à jour ---------- */
-.titre-vue { font: 700 1.5rem "Space Grotesk", sans-serif; margin: 4px 0 0; }
+.titre-vue { font: 700 1.5rem/34px "Space Grotesk", sans-serif; margin: 0; }
 .liste-actus { display: flex; flex-direction: column; gap: 14px; }
 @keyframes entree-actu { from { opacity: 0; transform: translateY(12px); } }
 .actu {

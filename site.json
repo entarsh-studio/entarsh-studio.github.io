@@ -1,5 +1,5 @@
 {
- "version": "0.4.0",
+ "version": "0.4.1",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,16 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.4.1",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "correction",
+     "texte": "La page ne se décale plus horizontalement en passant d'un onglet à l'autre"
+    }
+   ]
+  },
   {
    "version": "0.4.0",
    "date": "2026-10-11",
