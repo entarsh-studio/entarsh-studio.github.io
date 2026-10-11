@@ -1,5 +1,5 @@
 {
- "version": "0.4.1",
+ "version": "0.5.0",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,24 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.5.0",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "nouveau",
+     "texte": "Fiche détaillée de chaque élément : statistiques, image, dates, auteur, description complète, onglet Fichiers et bouton Télécharger"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Compteurs de téléchargements, de « J'aime » et de vues"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Les fiches du catalogue affichent les J'aime, le nombre de téléchargements et la taille ; un clic ouvre la fiche détaillée"
+    }
+   ]
+  },
   {
    "version": "0.4.1",
    "date": "2026-10-11",

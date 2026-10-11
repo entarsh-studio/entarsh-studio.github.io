@@ -19,6 +19,56 @@
   };
   const AUTEUR_DEFAUT = 'Entarsh Studio';
 
+  // ---------- Compteurs (Supabase, projet de Helper) ----------
+  const SB_URL = 'https://hltchrwrefrrfhtzimkn.supabase.co';
+  const SB_CLE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdGNocndyZWZycmZodHppbWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyMTUzMjMsImV4cCI6MjEwNjc5MTMyM30.aXJkkgIz89wsDw_7HrxesbvopPrkFleVfMVLB7X9GkM';
+  const SB_ENTETES = { apikey: SB_CLE, Authorization: `Bearer ${SB_CLE}`, 'Content-Type': 'application/json' };
+  let stats = {};            // { id: { telechargements, likes, vues } }
+  let statsDispo = false;    // false tant que les tables n'existent pas dans Supabase
+  const lireLocal = (cle, defaut) => { try { return JSON.parse(localStorage.getItem(cle)) ?? defaut; } catch { return defaut; } };
+  const ecrireLocal = (cle, v) => { try { localStorage.setItem(cle, JSON.stringify(v)); } catch {} };
+  let visiteur = lireLocal('entarsh-catalogue-visiteur', null);
+  if (!visiteur) { visiteur = crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); ecrireLocal('entarsh-catalogue-visiteur', visiteur); }
+  const mesLikes = new Set(lireLocal('entarsh-catalogue-likes', []));
+  const mesTelechargements = lireLocal('entarsh-catalogue-telechargements', {});
+  const stat = (id, cle) => stats[id]?.[cle] ?? 0;
+
+  async function chargerStats() {
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/catalogue_stats?select=id,telechargements,likes,vues`, { headers: SB_ENTETES, cache: 'no-store' });
+      if (!r.ok) return;
+      stats = Object.fromEntries((await r.json()).map(x => [x.id, x]));
+      statsDispo = true;
+    } catch {}
+  }
+  function rpc(nom, corps) {
+    return fetch(`${SB_URL}/rest/v1/rpc/${nom}`, { method: 'POST', headers: SB_ENTETES, body: JSON.stringify(corps), keepalive: true });
+  }
+  function compterTelechargement(id) {
+    mesTelechargements[id] = new Date().toISOString(); ecrireLocal('entarsh-catalogue-telechargements', mesTelechargements);
+    if (!statsDispo) return;
+    (stats[id] ||= { id, telechargements: 0, likes: 0, vues: 0 }).telechargements++;
+    rpc('catalogue_compter', { p_id: id, p_type: 'telechargement' }).catch(() => {});
+  }
+  function compterVue(id) {
+    if (!statsDispo) return;
+    let vus; try { vus = JSON.parse(sessionStorage.getItem('entarsh-catalogue-vus')) || []; } catch { vus = []; }
+    if (vus.includes(id)) return;
+    vus.push(id); try { sessionStorage.setItem('entarsh-catalogue-vus', JSON.stringify(vus)); } catch {}
+    (stats[id] ||= { id, telechargements: 0, likes: 0, vues: 0 }).vues++;
+    rpc('catalogue_compter', { p_id: id, p_type: 'vue' }).catch(() => {});
+  }
+  async function basculerLike(id) {
+    const aime = !mesLikes.has(id);
+    aime ? mesLikes.add(id) : mesLikes.delete(id);
+    ecrireLocal('entarsh-catalogue-likes', [...mesLikes]);
+    (stats[id] ||= { id, telechargements: 0, likes: 0, vues: 0 }).likes = Math.max(0, stat(id, 'likes') + (aime ? 1 : -1));
+    try {
+      const r = await rpc('catalogue_aimer', { p_id: id, p_visiteur: visiteur, p_aime: aime });
+      if (r.ok) stats[id].likes = await r.json();
+    } catch {}
+  }
+
   // ---------- Utilitaires ----------
   function el(balise, attrs = {}, ...enfants) {
     const n = document.createElement(balise);
@@ -60,12 +110,16 @@
 
   // ---------- Onglets latéraux (adresse #catalogue, #actualites, #mises-a-jour) ----------
   function changerVue() {
-    const vue = VUES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'catalogue';
-    for (const v of VUES) $('vue-' + v).hidden = v !== vue;
+    const h = decodeURIComponent(location.hash.slice(1));
+    const ficheId = h.startsWith('element/') ? h.slice(8) : null;
+    const vue = ficheId ? 'element' : VUES.includes(h) ? h : 'catalogue';
+    for (const v of [...VUES, 'element']) $('vue-' + v).hidden = v !== vue;
+    const onglet = vue === 'element' ? 'catalogue' : vue;
     document.querySelectorAll('.onglet').forEach(o => {
-      if (o.dataset.vue === vue) o.setAttribute('aria-current', 'page'); else o.removeAttribute('aria-current');
+      if (o.dataset.vue === onglet) o.setAttribute('aria-current', 'page'); else o.removeAttribute('aria-current');
     });
     $('criteres').hidden = vue !== 'catalogue';
+    if (ficheId) { afficherFiche(ficheId); scrollTo({ top: 0 }); }
   }
   addEventListener('hashchange', changerVue);
 
@@ -73,12 +127,13 @@
   async function charger() {
     $('etat').replaceChildren(chargeur(true), el('span', {}, 'Chargement du catalogue…'));
     const lire = async f => { const r = await fetch(f, { cache: 'no-cache' }); if (!r.ok) throw new Error(r.status); return r.json(); };
-    const [cat, inf] = await Promise.allSettled([lire('catalogue.json'), lire('site.json')]);
+    const [cat, inf] = await Promise.allSettled([lire('catalogue.json'), lire('site.json'), chargerStats()]);
     if (inf.status === 'fulfilled') site = { ...site, ...inf.value };
     afficherSite();
     if (cat.status !== 'fulfilled') { $('etat').textContent = 'Impossible de charger le catalogue.'; return; }
     catalogue = { types: [], elements: [], ...cat.value };
     afficher();
+    changerVue();
   }
 
   // ---------- Filtres (barre latérale) ----------
@@ -143,6 +198,8 @@
     version: 'M3 12V4h8l10 10-8 8L3 12Zm5-4h.01',
     disque: 'M4 14h16v5H4zM6 14l2-8h8l2 8M8 17h.01',
     telecharger: 'M12 4v11m0 0-4-4m4 4 4-4M5 20h14',
+    pouce: 'M7 11v9H4v-9h3Zm0 0 4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7',
+    oeil: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
   };
   const icone = n => { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); sv.classList.add('ic');
     const pa = document.createElementNS('http://www.w3.org/2000/svg', 'path'); pa.setAttribute('d', ICONES[n]); sv.append(pa); return sv; };
@@ -200,10 +257,11 @@
       : el('span', { class: 'initiale', style: `background:${coul}` }, (e.nom || '?').trim().charAt(0).toUpperCase());
     const f = e.fichier || {};
     const href = f.url || (f.chemin ? encoderChemin(f.chemin) : null);
+    const lien = `#element/${encodeURIComponent(e.id)}`;
     return el('article', { class: 'carte', style: `--i:${Math.min(i, 12)}` },
-      el('div', { class: 'carte-image' }, image),
+      el('a', { class: 'carte-image', href: lien, 'aria-label': `Voir ${e.nom}` }, image),
       el('div', { class: 'carte-corps' },
-        el('h2', {}, e.nom),
+        el('h2', {}, el('a', { href: lien }, e.nom)),
         el('div', { class: 'carte-auteur' }, el('img', { src: 'icone-48.png', alt: '', width: 16, height: 16 }), e.auteur || AUTEUR_DEFAUT),
         el('div', { class: 'carte-ligne' }, e.type),
         el('div', { class: 'carte-ligne carte-dates' },
@@ -211,10 +269,116 @@
           el('span', { title: 'Publié le ' + dateLisible(e.ajoute_le || '') }, icone('publie'), dateCourte(e.ajoute_le))),
         el('p', { class: 'carte-description' }, e.description || '')),
       el('div', { class: 'carte-pied' },
-        e.version ? el('span', { title: 'Version' }, icone('version'), 'v' + e.version.replace(/^v/i, '')) : null,
-        f.taille ? el('span', { title: 'Taille' }, icone('disque'), tailleLisible(f.taille)) : (f.url ? el('span', {}, icone('disque'), 'Lien externe') : null),
-        href ? el('a', { class: 'carte-telecharger', href, download: f.url ? null : (f.nom || ''), rel: f.url ? 'noopener' : null,
-          title: f.nom ? `Télécharger ${f.nom}` : 'Télécharger', 'aria-label': 'Télécharger' }, icone('telecharger'), el('span', { class: 'lbl' }, 'Télécharger')) : null));
+        el('span', { title: "J'aime", class: mesLikes.has(e.id) ? 'aime' : null }, icone('pouce'), statsDispo ? String(stat(e.id, 'likes')) : '—'),
+        el('span', { title: 'Téléchargements' }, icone('telecharger'), statsDispo ? String(stat(e.id, 'telechargements')) : '—'),
+        f.taille ? el('span', { title: 'Taille' }, icone('disque'), tailleLisible(f.taille)) : (f.url ? el('span', {}, icone('disque'), 'Lien externe') : null)));
+  }
+
+  // ---------- Fiche détaillée d'un élément ----------
+  function lienTelechargement(e) {
+    const f = e.fichier || {};
+    return { f, href: f.url || (f.chemin ? encoderChemin(f.chemin) : null) };
+  }
+  function boutonTelecharger(e, classe, texte) {
+    const { f, href } = lienTelechargement(e);
+    if (!href) return null;
+    return el('a', { class: classe, href, download: f.url ? null : (f.nom || ''), rel: f.url ? 'noopener' : null, target: f.url ? '_blank' : null,
+      onclick: () => { compterTelechargement(e.id); setTimeout(() => { majStatsFiche(e); afficher(); }, 50); } },
+      icone('telecharger'), texte);
+  }
+  function majStatsFiche(e) {
+    const zone = document.querySelector('#vue-element .fiche-stats');
+    if (!zone || zone.dataset.id !== e.id) return;
+    zone.replaceWith(blocStats(e));
+    const b = document.querySelector('#vue-element .bouton-aime');
+    if (b) { b.classList.toggle('actif', mesLikes.has(e.id)); b.setAttribute('aria-pressed', String(mesLikes.has(e.id))); b.lastChild.textContent = mesLikes.has(e.id) ? "J'aime déjà" : "J'aime"; }
+    const dl = document.querySelector('#vue-element .deja-telecharge');
+    if (dl) dl.replaceWith(etatTelechargement(e));
+  }
+  function blocStats(e) {
+    const v = cle => statsDispo ? String(stat(e.id, cle)) : '—';
+    const item = (ic, nom, val) => el('div', { class: 'fiche-stat' }, icone(ic), el('div', {}, el('span', {}, nom), el('strong', {}, val)));
+    return el('div', { class: 'fiche-stats', 'data-id': e.id },
+      item('pouce', "J'aime", v('likes')),
+      item('telecharger', 'Téléchargements', v('telechargements')),
+      item('oeil', 'Vues', v('vues')),
+      item('version', 'Version', e.version ? e.version.replace(/^v/i, '') : '—'),
+      item('disque', 'Taille', e.fichier?.taille ? tailleLisible(e.fichier.taille) : e.fichier?.url ? 'Lien externe' : '—'));
+  }
+  function etatTelechargement(e) {
+    const quand = mesTelechargements[e.id];
+    return el('p', { class: 'deja-telecharge' + (quand ? ' oui' : '') },
+      el('span', { class: 'pastille-etat' }, quand ? '✓' : '✕'),
+      quand ? `Tu as téléchargé cet élément le ${dateLisible(quand)}.` : "Tu n'as pas encore téléchargé cet élément.");
+  }
+  function ligneInfo(nom, valeur, titre) {
+    return el('div', { class: 'fiche-info' }, el('span', {}, nom), el('strong', { title: titre || null }, valeur));
+  }
+  function afficherFiche(id) {
+    const zone = $('vue-element');
+    const e = catalogue.elements.find(x => x.id === id);
+    if (!e) {
+      zone.replaceChildren(el('div', { class: 'etat' }, catalogue.elements.length ? 'Cet élément n\'existe pas ou a été retiré.' : 'Chargement…',
+        el('a', { href: '#catalogue', class: 'lien-retour' }, '← Retour au catalogue')));
+      return;
+    }
+    compterVue(e.id);
+    const coul = couleurType(e.type);
+    const { f } = lienTelechargement(e);
+    let ongletActif = 'description';
+    const corpsOnglet = el('div', { class: 'fiche-onglet-corps' });
+    const onglets = el('div', { class: 'fiche-onglets', role: 'tablist' });
+    const contenus = {
+      description: () => el('div', { class: 'fiche-description' },
+        el('h3', {}, 'À propos'),
+        etatTelechargement(e),
+        el('p', { class: 'fiche-texte' }, e.description || 'Pas de description.'),
+        el('div', { class: 'fiche-actions-bas' },
+          el('button', { type: 'button', class: 'bouton-contour', onclick: ev => {
+            const url = location.href;
+            (navigator.clipboard?.writeText(url) ?? Promise.reject()).then(() => { ev.target.textContent = 'Lien copié ✓'; setTimeout(() => { ev.target.textContent = 'Partager'; }, 2000); },
+              () => prompt('Copie ce lien :', url));
+          } }, 'Partager'))),
+      fichiers: () => el('div', { class: 'fiche-fichiers' },
+        el('div', { class: 'fichier-ligne' },
+          el('div', { class: 'fichier-infos' },
+            el('strong', {}, f.nom || 'Fichier'),
+            el('span', {}, [e.version ? 'Version ' + e.version.replace(/^v/i, '') : null, f.taille ? tailleLisible(f.taille) : f.url ? 'Lien externe' : null,
+              'Mis à jour le ' + dateLisible(e.modifie_le || e.ajoute_le || '')].filter(Boolean).join(' · '))),
+          boutonTelecharger(e, 'bouton-principal', 'Télécharger'))),
+    };
+    const titres = { description: 'Description', fichiers: 'Fichiers' };
+    function montrer(nom) {
+      ongletActif = nom;
+      onglets.replaceChildren(...Object.keys(contenus).map(k => el('button', { type: 'button', role: 'tab', class: 'fiche-onglet', 'aria-selected': String(k === ongletActif), onclick: () => montrer(k) },
+        titres[k], k === 'fichiers' ? el('span', { class: 'compte-onglet' }, f.nom || f.url ? '1' : '0') : null)));
+      corpsOnglet.replaceChildren(contenus[nom]());
+    }
+    montrer('description');
+
+    const aime = mesLikes.has(e.id);
+    const boutonAime = el('button', { type: 'button', class: 'bouton-contour bouton-aime' + (aime ? ' actif' : ''), 'aria-pressed': String(aime),
+      onclick: async () => { await basculerLike(e.id); majStatsFiche(e); afficher(); } }, icone('pouce'), el('span', {}, aime ? "J'aime déjà" : "J'aime"));
+
+    zone.replaceChildren(
+      el('nav', { class: 'fil-ariane', 'aria-label': "Fil d'Ariane" },
+        el('a', { href: '#catalogue' }, 'Catalogue'), el('span', {}, '/'),
+        el('a', { href: '#catalogue', onclick: () => { criteres.types = new Set([e.type]); criteres.page = 1; afficher(); } }, e.type), el('span', {}, '/'),
+        el('span', { class: 'actuel' }, e.nom)),
+      el('div', { class: 'fiche-entete' },
+        el('h2', { class: 'fiche-titre' }, e.nom),
+        el('div', { class: 'fiche-boutons' }, boutonAime, boutonTelecharger(e, 'bouton-principal', 'Télécharger'))),
+      blocStats(e),
+      el('div', { class: 'fiche-media' },
+        e.image ? el('a', { href: encoderChemin(e.image), target: '_blank', rel: 'noopener', class: 'fiche-image', title: 'Voir en grand' }, el('img', { src: encoderChemin(e.image), alt: `Image de ${e.nom}` }))
+          : el('div', { class: 'fiche-image vide' }, el('span', { class: 'initiale', style: `background:${coul}` }, (e.nom || '?').trim().charAt(0).toUpperCase()))),
+      el('div', { class: 'fiche-infos' },
+        ligneInfo('Dernière mise à jour', dateLisible(e.modifie_le || e.ajoute_le || ''), tempsRelatif(e.modifie_le || e.ajoute_le)),
+        ligneInfo('Mise en ligne', dateLisible(e.ajoute_le || ''), tempsRelatif(e.ajoute_le)),
+        ligneInfo('Créé par', e.auteur || AUTEUR_DEFAUT),
+        ligneInfo('Catégorie', e.type)),
+      onglets,
+      corpsOnglet);
   }
 
   // ---------- Mises à jour (frise) ----------
