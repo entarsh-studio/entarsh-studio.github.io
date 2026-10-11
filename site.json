@@ -1,5 +1,5 @@
 {
- "version": "0.3.2",
+ "version": "0.3.3",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,16 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.3.3",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "amelioration",
+     "texte": "Onglet Mises à jour plus sobre : moins d'animations"
+    }
+   ]
+  },
   {
    "version": "0.3.2",
    "date": "2026-10-10",
