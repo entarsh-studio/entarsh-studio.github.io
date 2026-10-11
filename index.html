@@ -54,7 +54,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=0.3.4">
+<link rel="stylesheet" href="style.css?v=0.4.0">
 </head>
 <body>
 <canvas id="fond" aria-hidden="true"></canvas>
@@ -101,30 +101,27 @@
       </a>
     </nav>
 
-    <details id="criteres" class="criteres" open>
-      <summary>Critères de recherche</summary>
-      <fieldset>
-        <legend>Types</legend>
-        <div id="crit-types" class="crit-types"></div>
-      </fieldset>
-      <label>Trier par
-        <select id="crit-tri">
-          <option value="ajout">Plus récents</option>
-          <option value="maj">Mis à jour récemment</option>
-          <option value="nom">Nom (A → Z)</option>
-          <option value="nom-inv">Nom (Z → A)</option>
-        </select>
-      </label>
-      <label>Ajoutés
-        <select id="crit-periode">
-          <option value="0">Depuis toujours</option>
-          <option value="7">Ces 7 derniers jours</option>
-          <option value="30">Ces 30 derniers jours</option>
-          <option value="365">Cette année</option>
-        </select>
-      </label>
-      <button id="crit-reset" type="button" class="lien-discret">Réinitialiser les critères</button>
-    </details>
+    <div id="criteres" class="filtres">
+      <button id="basculer-filtres" type="button" class="bouton-filtres" aria-expanded="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        <span>Masquer les filtres</span>
+      </button>
+      <div id="filtres-corps" class="filtres-corps">
+        <details class="filtre-section" open>
+          <summary>Catégorie</summary>
+          <div id="crit-types" class="crit-types"></div>
+        </details>
+        <details class="filtre-section" open>
+          <summary>Paramètres de recherche</summary>
+          <div class="crit-champs">
+            <input id="crit-nom" type="search" placeholder="Le nom contient" aria-label="Le nom contient">
+            <input id="crit-desc" type="search" placeholder="La description contient" aria-label="La description contient">
+            <input id="crit-auteur" type="search" placeholder="L'auteur contient" aria-label="L'auteur contient">
+          </div>
+        </details>
+        <button id="crit-reset" type="button" class="lien-discret">Réinitialiser les filtres</button>
+      </div>
+    </div>
 
     <p class="version-site">Version <span id="version-site">—</span> · <span class="beta-texte">bêta</span></p>
   </aside>
@@ -132,9 +129,47 @@
   <main>
     <!-- Vue Catalogue -->
     <section id="vue-catalogue" class="vue">
-      <input id="recherche" type="search" placeholder="Rechercher un jeu, un éditeur…" aria-label="Rechercher">
+      <div class="barre-outils">
+        <p id="nb-resultats" class="nb-resultats">—</p>
+        <div class="outils">
+          <label class="outil"><span class="sr">Période</span>
+            <select id="crit-periode">
+              <option value="0">Depuis toujours</option>
+              <option value="7">Cette semaine</option>
+              <option value="30">Ce mois-ci</option>
+              <option value="365">Cette année</option>
+            </select>
+          </label>
+          <label class="outil"><span class="sr">Trier par</span>
+            <select id="crit-tri">
+              <option value="ajout">Date d'ajout</option>
+              <option value="maj">Date de mise à jour</option>
+              <option value="nom">Nom</option>
+              <option value="taille">Taille</option>
+            </select>
+          </label>
+          <label class="outil"><span class="sr">Ordre</span>
+            <select id="crit-ordre">
+              <option value="desc">Décroissant</option>
+              <option value="asc">Croissant</option>
+            </select>
+          </label>
+          <label class="outil"><span class="sr">Éléments par page</span>
+            <select id="crit-par-page">
+              <option value="12">12 éléments</option>
+              <option value="24">24 éléments</option>
+              <option value="48">48 éléments</option>
+            </select>
+          </label>
+          <button id="basculer-vue" type="button" class="outil-bouton" aria-label="Affichage en liste" title="Affichage en liste">
+            <svg class="ic-grille" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>
+            <svg class="ic-liste" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h4v4H4zM10 6h10v2H10zM4 15h4v4H4zM10 16h10v2H10z"/></svg>
+          </button>
+        </div>
+      </div>
       <div id="etat" class="etat"></div>
       <div id="grille" class="grille" aria-live="polite"></div>
+      <nav id="pagination" class="pagination" aria-label="Pages"></nav>
       <noscript><p class="etat">Entarsh Catalogue by Entarsh Studio : activez JavaScript pour parcourir les jeux vidéo, éditeurs et outils.</p></noscript>
     </section>
 
@@ -186,6 +221,7 @@
         </label>
         <label class="court">Version<input id="f-version" maxlength="20" placeholder="1.0"></label>
       </div>
+      <label>Auteur<input id="f-auteur" maxlength="40" placeholder="Entarsh Studio"></label>
       <label>Description<textarea id="f-description" rows="3" maxlength="600"></textarea></label>
 
       <div id="depot" class="depot" tabindex="0" role="button" aria-label="Choisir le fichier">
@@ -281,7 +317,7 @@
   </section>
 </dialog>
 
-<script src="fond.js?v=0.3.4"></script>
-<script src="app.js?v=0.3.4"></script>
+<script src="fond.js?v=0.4.0"></script>
+<script src="app.js?v=0.4.0"></script>
 </body>
 </html>

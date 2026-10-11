@@ -1,5 +1,5 @@
 {
- "version": "0.3.4",
+ "version": "0.4.0",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,36 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.4.0",
+   "date": "2026-10-11",
+   "nouveautes": [
+    {
+     "type": "amelioration",
+     "texte": "Nouvelle disposition du catalogue : filtres à gauche (catégories, paramètres de recherche), barre d'outils au-dessus des résultats"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Tri par date d'ajout, date de mise à jour, nom ou taille, ordre croissant ou décroissant"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Choix du nombre d'éléments par page, pagination, affichage en grille ou en liste"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Nouvelles fiches : auteur, catégorie, dates, version, taille et téléchargement"
+    },
+    {
+     "type": "nouveau",
+     "texte": "Champ Auteur dans la gestion des éléments"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Effets retirés, seules les animations restent"
+    }
+   ]
+  },
   {
    "version": "0.3.4",
    "date": "2026-10-11",

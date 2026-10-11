@@ -11,7 +11,13 @@
   const $ = id => document.getElementById(id);
   let catalogue = { version: 1, types: [], elements: [] };
   let site = { version: '', beta: true, actualites: [], mises_a_jour: [] };
-  const criteres = { types: new Set(), tri: 'ajout', periode: 0 };
+  const CLE_AFFICHAGE = 'entarsh-catalogue-affichage';
+  const criteres = { types: new Set(), nom: '', desc: '', auteur: '', periode: 0, tri: 'ajout', ordre: 'desc', parPage: 24, page: 1, vue: 'grille', filtres: true };
+  try { Object.assign(criteres, JSON.parse(localStorage.getItem(CLE_AFFICHAGE)) || {}); } catch {}
+  const memoriserAffichage = () => {
+    try { localStorage.setItem(CLE_AFFICHAGE, JSON.stringify({ parPage: criteres.parPage, vue: criteres.vue, filtres: criteres.filtres })); } catch {}
+  };
+  const AUTEUR_DEFAUT = 'Entarsh Studio';
 
   // ---------- Utilitaires ----------
   function el(balise, attrs = {}, ...enfants) {
@@ -75,7 +81,7 @@
     afficher();
   }
 
-  // ---------- Critères ----------
+  // ---------- Filtres (barre latérale) ----------
   function afficherCriteres() {
     const comptes = {};
     for (const e of catalogue.elements) comptes[e.type] = (comptes[e.type] || 0) + 1;
@@ -83,60 +89,132 @@
     for (const t of [...criteres.types]) if (!comptes[t]) criteres.types.delete(t);
     $('crit-types').replaceChildren(...(types.length ? types.map(t => el('label', { class: 'crit-type' },
       el('input', { type: 'checkbox', ...(criteres.types.has(t) ? { checked: '' } : {}),
-        onchange: ev => { ev.target.checked ? criteres.types.add(t) : criteres.types.delete(t); afficher(); } }),
-      el('span', { class: 'pastille', style: `background:${couleurType(t)}` }),
-      t, el('small', {}, String(comptes[t]))))
-      : [el('p', { class: 'crit-vide' }, 'Aucun type pour le moment.')]));
+        onchange: ev => { ev.target.checked ? criteres.types.add(t) : criteres.types.delete(t); criteres.page = 1; afficher(); } }),
+      el('span', {}, t), el('small', {}, `(${comptes[t]})`)))
+      : [el('p', { class: 'crit-vide' }, 'Aucune catégorie pour le moment.')]));
   }
-  $('crit-tri').addEventListener('change', e => { criteres.tri = e.target.value; afficher(); });
-  $('crit-periode').addEventListener('change', e => { criteres.periode = +e.target.value; afficher(); });
+  function appliquerFiltresVisibles() {
+    $('filtres-corps').hidden = !criteres.filtres;
+    $('basculer-filtres').setAttribute('aria-expanded', String(criteres.filtres));
+    $('basculer-filtres').querySelector('span').textContent = criteres.filtres ? 'Masquer les filtres' : 'Afficher les filtres';
+  }
+  $('basculer-filtres').addEventListener('click', () => { criteres.filtres = !criteres.filtres; appliquerFiltresVisibles(); memoriserAffichage(); });
+
+  for (const [id, cle] of [['crit-nom', 'nom'], ['crit-desc', 'desc'], ['crit-auteur', 'auteur']])
+    $(id).addEventListener('input', e => { criteres[cle] = e.target.value; criteres.page = 1; afficher(); });
+  for (const [id, cle, nombre] of [['crit-periode', 'periode', true], ['crit-tri', 'tri'], ['crit-ordre', 'ordre'], ['crit-par-page', 'parPage', true]])
+    $(id).addEventListener('change', e => { criteres[cle] = nombre ? +e.target.value : e.target.value; criteres.page = 1; memoriserAffichage(); afficher(); });
+  $('crit-tri').addEventListener('change', e => {           // ordre logique par défaut selon le tri
+    criteres.ordre = e.target.value === 'nom' ? 'asc' : 'desc'; $('crit-ordre').value = criteres.ordre; afficher();
+  });
   $('crit-reset').addEventListener('click', () => {
-    criteres.types.clear(); criteres.tri = 'ajout'; criteres.periode = 0;
-    $('crit-tri').value = 'ajout'; $('crit-periode').value = '0'; $('recherche').value = '';
+    Object.assign(criteres, { nom: '', desc: '', auteur: '', periode: 0, tri: 'ajout', ordre: 'desc', page: 1 });
+    criteres.types.clear();
+    for (const id of ['crit-nom', 'crit-desc', 'crit-auteur']) $(id).value = '';
+    $('crit-periode').value = '0'; $('crit-tri').value = 'ajout'; $('crit-ordre').value = 'desc';
     afficher();
   });
-  $('recherche').addEventListener('input', () => afficher());
+  function appliquerVue() {
+    $('grille').classList.toggle('liste', criteres.vue === 'liste');
+    const l = criteres.vue === 'liste';
+    $('basculer-vue').classList.toggle('en-liste', l);
+    $('basculer-vue').setAttribute('aria-label', l ? 'Affichage en grille' : 'Affichage en liste');
+    $('basculer-vue').title = l ? 'Affichage en grille' : 'Affichage en liste';
+  }
+  $('basculer-vue').addEventListener('click', () => { criteres.vue = criteres.vue === 'liste' ? 'grille' : 'liste'; appliquerVue(); memoriserAffichage(); afficher(); });
 
   // ---------- Catalogue ----------
+  function tempsRelatif(iso) {
+    const ms = Date.now() - new Date(iso).getTime();
+    if (isNaN(ms)) return '';
+    const min = Math.round(ms / 6e4), h = Math.round(ms / 36e5), j = Math.round(ms / 864e5);
+    if (min < 1) return "à l'instant";
+    if (min < 60) return `il y a ${min} min`;
+    if (h < 24) return `il y a ${h} heure${h > 1 ? 's' : ''}`;
+    if (j < 7) return `il y a ${j} jour${j > 1 ? 's' : ''}`;
+    if (j < 31) { const s = Math.round(j / 7); return `il y a ${s} semaine${s > 1 ? 's' : ''}`; }
+    if (j < 365) return `il y a ${Math.round(j / 30)} mois`;
+    const a = Math.round(j / 365); return `il y a ${a} an${a > 1 ? 's' : ''}`;
+  }
+  const dateCourte = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }); };
+  const ICONES = {
+    horloge: 'M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+    publie: 'M12 16V5m0 0-4 4m4-4 4 4M5 19h14',
+    version: 'M3 12V4h8l10 10-8 8L3 12Zm5-4h.01',
+    disque: 'M4 14h16v5H4zM6 14l2-8h8l2 8M8 17h.01',
+    telecharger: 'M12 4v11m0 0-4-4m4 4 4-4M5 20h14',
+  };
+  const icone = n => { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); sv.classList.add('ic');
+    const pa = document.createElementNS('http://www.w3.org/2000/svg', 'path'); pa.setAttribute('d', ICONES[n]); sv.append(pa); return sv; };
+
   function afficher() {
     afficherCriteres();
-    const q = normaliser($('recherche').value.trim());
+    const [qn, qd, qa] = [criteres.nom, criteres.desc, criteres.auteur].map(x => normaliser(x.trim()));
     const limite = criteres.periode ? Date.now() - criteres.periode * 864e5 : 0;
-    const tris = {
-      ajout: (a, b) => (b.ajoute_le || '').localeCompare(a.ajoute_le || ''),
-      maj: (a, b) => (b.modifie_le || '').localeCompare(a.modifie_le || ''),
+    const cles = {
+      ajout: (a, b) => (a.ajoute_le || '').localeCompare(b.ajoute_le || ''),
+      maj: (a, b) => (a.modifie_le || '').localeCompare(b.modifie_le || ''),
       nom: (a, b) => a.nom.localeCompare(b.nom, 'fr'),
-      'nom-inv': (a, b) => b.nom.localeCompare(a.nom, 'fr'),
+      taille: (a, b) => (a.fichier?.taille || 0) - (b.fichier?.taille || 0),
     };
+    const sens = criteres.ordre === 'asc' ? 1 : -1;
     const liste = catalogue.elements
       .filter(e => !criteres.types.size || criteres.types.has(e.type))
       .filter(e => !limite || new Date(e.ajoute_le).getTime() >= limite)
-      .filter(e => !q || normaliser(`${e.nom} ${e.type} ${e.description}`).includes(q))
-      .sort(tris[criteres.tri]);
+      .filter(e => !qn || normaliser(e.nom).includes(qn))
+      .filter(e => !qd || normaliser(e.description).includes(qd))
+      .filter(e => !qa || normaliser(e.auteur || AUTEUR_DEFAUT).includes(qa))
+      .sort((a, b) => sens * cles[criteres.tri](a, b));
+
+    const pages = Math.max(1, Math.ceil(liste.length / criteres.parPage));
+    criteres.page = Math.min(criteres.page, pages);
+    const debut = (criteres.page - 1) * criteres.parPage;
 
     $('compte').textContent = catalogue.elements.length || '';
-    $('grille').replaceChildren(...liste.map(carte));
+    $('nb-resultats').textContent = `${liste.length} résultat${liste.length > 1 ? 's' : ''}`;
+    $('grille').replaceChildren(...liste.slice(debut, debut + criteres.parPage).map(carte));
     $('etat').textContent = catalogue.elements.length === 0 ? 'Le catalogue est vide pour le moment.'
-      : liste.length === 0 ? 'Aucun résultat avec ces critères.' : '';
+      : liste.length === 0 ? 'Aucun résultat avec ces filtres.' : '';
+    afficherPagination(pages);
   }
 
-  function carte(e) {
+  function afficherPagination(pages) {
+    const nav = $('pagination');
+    if (pages <= 1) { nav.replaceChildren(); return; }
+    const aller = p => () => { criteres.page = p; afficher(); $('vue-catalogue').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    const numeros = [];
+    for (let p = 1; p <= pages; p++)
+      if (p === 1 || p === pages || Math.abs(p - criteres.page) <= 1) numeros.push(p);
+      else if (numeros[numeros.length - 1] !== '…') numeros.push('…');
+    nav.replaceChildren(
+      el('button', { type: 'button', class: 'page', disabled: criteres.page === 1 ? '' : null, 'aria-label': 'Page précédente', onclick: aller(criteres.page - 1) }, '‹'),
+      ...numeros.map(p => p === '…' ? el('span', { class: 'page-trou' }, '…')
+        : el('button', { type: 'button', class: 'page', 'aria-current': p === criteres.page ? 'page' : null, onclick: aller(p) }, String(p))),
+      el('button', { type: 'button', class: 'page', disabled: criteres.page === pages ? '' : null, 'aria-label': 'Page suivante', onclick: aller(criteres.page + 1) }, '›'));
+  }
+
+  function carte(e, i) {
     const coul = couleurType(e.type);
     const image = e.image
       ? el('img', { src: encoderChemin(e.image), alt: '', loading: 'lazy' })
-      : el('div', { class: 'initiale', style: `background:${coul}` }, (e.nom || '?').trim().charAt(0).toUpperCase());
+      : el('span', { class: 'initiale', style: `background:${coul}` }, (e.nom || '?').trim().charAt(0).toUpperCase());
     const f = e.fichier || {};
     const href = f.url || (f.chemin ? encoderChemin(f.chemin) : null);
-    return el('article', { class: 'carte' },
+    return el('article', { class: 'carte', style: `--i:${Math.min(i, 12)}` },
       el('div', { class: 'carte-image' }, image),
       el('div', { class: 'carte-corps' },
-        el('div', { class: 'carte-haut' },
-          el('h2', {}, e.nom),
-          e.version ? el('span', { class: 'version' }, 'v' + e.version.replace(/^v/i, '')) : null),
-        el('span', { class: 'type', style: `background:${coul}` }, e.type),
-        el('p', {}, e.description || ''),
-        href ? el('a', { class: 'telecharger', href, download: f.url ? null : (f.nom || ''), rel: f.url ? 'noopener' : null },
-          'Télécharger', el('span', {}, [f.nom, tailleLisible(f.taille)].filter(Boolean).join(' · '))) : null));
+        el('h2', {}, e.nom),
+        el('div', { class: 'carte-auteur' }, el('img', { src: 'icone-48.png', alt: '', width: 16, height: 16 }), e.auteur || AUTEUR_DEFAUT),
+        el('div', { class: 'carte-ligne' }, e.type),
+        el('div', { class: 'carte-ligne carte-dates' },
+          el('span', { title: 'Mis à jour le ' + dateLisible(e.modifie_le || e.ajoute_le || '') }, icone('horloge'), tempsRelatif(e.modifie_le || e.ajoute_le)),
+          el('span', { title: 'Publié le ' + dateLisible(e.ajoute_le || '') }, icone('publie'), dateCourte(e.ajoute_le))),
+        el('p', { class: 'carte-description' }, e.description || '')),
+      el('div', { class: 'carte-pied' },
+        e.version ? el('span', { title: 'Version' }, icone('version'), 'v' + e.version.replace(/^v/i, '')) : null,
+        f.taille ? el('span', { title: 'Taille' }, icone('disque'), tailleLisible(f.taille)) : (f.url ? el('span', {}, icone('disque'), 'Lien externe') : null),
+        href ? el('a', { class: 'carte-telecharger', href, download: f.url ? null : (f.nom || ''), rel: f.url ? 'noopener' : null,
+          title: f.nom ? `Télécharger ${f.nom}` : 'Télécharger', 'aria-label': 'Télécharger' }, icone('telecharger'), el('span', { class: 'lbl' }, 'Télécharger')) : null));
   }
 
   // ---------- Mises à jour (frise) ----------
@@ -514,6 +592,7 @@
     $('f-nom').value = e.nom;
     $('f-type').value = e.type;
     $('f-version').value = e.version || '';
+    $('f-auteur').value = e.auteur || '';
     $('f-description').value = e.description || '';
     $('f-lien').value = e.fichier?.url || '';
     choisirFichier(null, e.fichier?.chemin ? `Fichier actuel : ${e.fichier.nom} (déposer pour remplacer)` : null);
@@ -600,6 +679,7 @@
       const element = {
         id, nom, type,
         version: $('f-version').value.trim(),
+        auteur: $('f-auteur').value.trim(),
         description: $('f-description').value.trim(),
         fichier, image: cheminImage,
         ajoute_le: ancien?.ajoute_le || maintenant,
@@ -657,7 +737,11 @@
   });
 
   // ---------- Démarrage ----------
-  if (matchMedia('(max-width: 820px)').matches) $('criteres').open = false;
+  let affichageMemorise = false;
+  try { affichageMemorise = localStorage.getItem(CLE_AFFICHAGE) !== null; } catch {}
+  if (matchMedia('(max-width: 820px)').matches && !affichageMemorise) criteres.filtres = false;
+  $('crit-par-page').value = String(criteres.parPage);
+  appliquerFiltresVisibles(); appliquerVue();
   changerVue();
   charger();
 })();
