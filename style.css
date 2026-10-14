@@ -672,7 +672,7 @@ input:not([type=checkbox]), textarea, select { width: 100%; }
   .lien-helper { padding: 0; width: 34px; height: 34px; justify-content: center; }
   .lien-helper span { display: none; }
   .lien-helper img { width: 22px; height: 22px; }
-  .bouton-compte { padding: 0; width: 34px; height: 34px; justify-content: center; }
+  .bouton-compte, .bouton-compte:not(.connecte) { padding: 0; width: 34px; height: 34px; justify-content: center; gap: 0; }
   .bouton-compte .nom-compte { display: none; }
   .bouton-compte:not(.connecte) .icone-compte { display: block; width: 20px; height: 20px; }
   .bouton-compte.connecte .avatar-compte { width: 26px; height: 26px; }
@@ -781,7 +781,7 @@ input:not([type=checkbox]), textarea, select { width: 100%; }
   .maj::before { left: -25px; }
 
   /* Fenêtres : feuilles qui montent du bas */
-  .panneau { width: 100%; max-width: 100%; max-height: 94dvh; margin: auto 0 0; border-radius: 20px 20px 0 0; border-bottom: 0; }
+  .panneau, .panneau.panneau-compte { width: 100%; max-width: 100%; max-height: 94dvh; margin: auto 0 0; border-radius: 20px 20px 0 0; border-bottom: 0; }
   .panneau[open] { animation: monte .28s cubic-bezier(.2,.8,.2,1) both; }
   .panneau-haut { padding: 14px 16px 12px; }
   .panneau-haut h2 { font-size: 1.1rem; }
