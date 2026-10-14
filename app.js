@@ -390,6 +390,22 @@
       el('span', {}, t), el('small', {}, `(${comptes[t]})`)))
       : [el('p', { class: 'crit-vide' }, 'Aucune catégorie pour le moment.')]));
   }
+  // Téléphone : les filtres s'ouvrent dans une feuille en bas de l'écran
+  const mobile = () => matchMedia('(max-width: 820px)').matches;
+  function feuilleFiltres(ouvrir) {
+    document.body.classList.toggle('filtres-ouverts', ouvrir);
+    $('voile-filtres').hidden = !ouvrir;
+  }
+  $('ouvrir-filtres').addEventListener('click', () => feuilleFiltres(true));
+  $('fermer-filtres').addEventListener('click', () => feuilleFiltres(false));
+  $('voir-resultats').addEventListener('click', () => feuilleFiltres(false));
+  $('voile-filtres').addEventListener('click', () => feuilleFiltres(false));
+  addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('filtres-ouverts')) feuilleFiltres(false); });
+  function majNbFiltres(n) {
+    const actifs = criteres.types.size + [criteres.nom, criteres.desc, criteres.auteur].filter(x => x.trim()).length + (criteres.periode ? 1 : 0);
+    $('nb-filtres').hidden = !actifs; $('nb-filtres').textContent = actifs;
+    $('voir-resultats').textContent = `Voir ${n} résultat${n > 1 ? 's' : ''}`;
+  }
   function appliquerFiltresVisibles() {
     $('filtres-corps').hidden = !criteres.filtres;
     $('basculer-filtres').setAttribute('aria-expanded', String(criteres.filtres));
@@ -475,6 +491,7 @@
 
     $('compte').textContent = catalogue.elements.length || '';
     $('nb-resultats').textContent = `${liste.length} résultat${liste.length > 1 ? 's' : ''}`;
+    majNbFiltres(liste.length);
     $('grille').replaceChildren(...liste.slice(debut, debut + criteres.parPage).map(carte));
     $('etat').textContent = catalogue.elements.length === 0 ? 'Le catalogue est vide pour le moment.'
       : liste.length === 0 ? 'Aucun résultat avec ces filtres.' : '';

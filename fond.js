@@ -15,14 +15,16 @@
   const NOMS = ['carres', 'tetris', 'flappy', 'snake', 'vie', 'pluie'];
   try { if (NOMS.includes(localStorage.getItem(CLE))) mode = localStorage.getItem(CLE); } catch {}
 
-  let taille, ecart, cols, lignes, ox, oy, dpr = 1, temps = 0;
+  let taille, ecart, cols, lignes, ox, oy, dpr = 1, temps = 0, largeur = 0, hauteur = 0;
   const hasard = n => Math.floor(Math.random() * n);
 
   function dimensionner() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const l = innerWidth, h = innerHeight;
+    // Taille réelle de l'écran (sans la barre de défilement) : le fond ne doit jamais élargir la page
+    const l = document.documentElement.clientWidth || innerWidth, h = document.documentElement.clientHeight || innerHeight;
+    largeur = l; hauteur = h;
     toile.width = l * dpr; toile.height = h * dpr;
-    toile.style.width = l + 'px'; toile.style.height = h + 'px';
+    toile.style.width = '100%'; toile.style.height = '100%';
     taille = l < 600 ? 64 : 96;
     ecart = l < 600 ? 8 : 12;
     const pas = taille + ecart;
@@ -55,7 +57,7 @@
   function effacer() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.globalAlpha = 1;
-    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    ctx.clearRect(0, 0, largeur, hauteur);
   }
 
   // =================== Motif 1 : carrés lumineux ===================
@@ -299,7 +301,7 @@
         ctx.restore();
         ctx.globalAlpha = 0.35; ctx.fillStyle = '#ffffff';
         ctx.font = `700 ${Math.round(taille * 0.5)}px "Space Grotesk", system-ui, sans-serif`; ctx.textAlign = 'right';
-        ctx.fillText(String(score), innerWidth - 24, innerHeight - 24);
+        ctx.fillText(String(score), largeur - 24, hauteur - 24);
         ctx.globalAlpha = 1;
       },
       statique() {},

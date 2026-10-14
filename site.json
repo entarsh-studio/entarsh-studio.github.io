@@ -1,5 +1,5 @@
 {
- "version": "0.9.1",
+ "version": "0.9.2",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,24 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.9.2",
+   "date": "2026-10-14",
+   "nouveautes": [
+    {
+     "type": "amelioration",
+     "texte": "Téléphone : en-tête compact qui reste en haut, barre d'onglets en bas de l'écran"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Téléphone : filtres dans une feuille qui monte du bas, barre de tri sur une seule ligne"
+    },
+    {
+     "type": "amelioration",
+     "texte": "Téléphone : fiches, page d'un élément, mises à jour et fenêtres repensées pour les petits écrans"
+    }
+   ]
+  },
   {
    "version": "0.9.1",
    "date": "2026-10-11",
