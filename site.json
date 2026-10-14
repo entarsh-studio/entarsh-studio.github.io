@@ -1,5 +1,5 @@
 {
- "version": "0.9.4",
+ "version": "0.9.5",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,16 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.9.5",
+   "date": "2026-10-14",
+   "nouveautes": [
+    {
+     "type": "correction",
+     "texte": "Les images en hauteur (format téléphone) s'affichent en entier dans la visionneuse et dans les vignettes"
+    }
+   ]
+  },
   {
    "version": "0.9.4",
    "date": "2026-10-14",

@@ -289,7 +289,7 @@ svg { flex-shrink: 0; }
   animation: arrivee .4s cubic-bezier(.2,.8,.2,1) backwards; animation-delay: calc(var(--i) * 50ms + 150ms);
   outline: 2px solid transparent; transition: outline-color .2s, transform .2s;
 }
-.vignette img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
+.vignette img { width: 100%; height: 100%; object-fit: contain; display: block; transition: transform .3s; }
 .vignette:hover { outline-color: rgba(255,255,255,.5); }
 .vignette:hover img, .fiche-image:hover img { transform: scale(1.04); }
 .fiche-image img { transition: transform .3s; }
@@ -299,7 +299,7 @@ svg { flex-shrink: 0; }
 .visionneuse { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; }
 .visionneuse[open] { display: grid; place-items: center; }
 .visionneuse::backdrop { background: rgba(5,5,9,.92); backdrop-filter: blur(4px); }
-#vis-image { max-width: calc(100% - 140px); max-height: calc(100% - 110px); object-fit: contain; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+#vis-image { max-width: calc(100vw - 140px); max-height: calc(100vh - 110px); max-height: calc(100dvh - 110px); width: auto; height: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
 #vis-image.arrivee { animation: vis-arrivee .25s ease both; }
 @keyframes vis-arrivee { from { opacity: 0; transform: scale(.97); } }
 .vis-bouton { position: fixed; display: grid; place-items: center; cursor: pointer; color: #fff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 50%; }
@@ -796,7 +796,9 @@ input:not([type=checkbox]), textarea, select { width: 100%; }
   .profil-identite strong { font-size: 1.2rem; }
   .ligne > label, .ligne > label.large { flex-basis: 100%; }
   .ligne > label.court { flex: 1 1 100px; }
-  input, textarea, select { font-size: 16px; }   /* évite le zoom automatique sur iPhone */
+  input, textarea, select { font-size: 16px; }
+  #vis-image { max-width: 100vw; max-height: calc(100vh - 150px); max-height: calc(100dvh - 150px); border-radius: 0; }
+  .vis-prec, .vis-suiv { top: auto; bottom: 14px; transform: none; width: 46px; height: 46px; }   /* évite le zoom automatique sur iPhone */
   .carte-outils { top: 6px; right: 6px; }
   .outil-rond { width: 30px; height: 30px; }
   .pied { padding-bottom: 12px; font-size: .8rem; }
