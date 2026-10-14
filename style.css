@@ -660,7 +660,11 @@ input:not([type=checkbox]), textarea, select { width: 100%; }
   .marque img { width: 38px; height: 38px; border-radius: 9px; }
   .marque > span { min-width: 0; }
   .titre-ligne { gap: 7px; }
-  .marque h1 { font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .marque h1 { font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .marque { flex: 1 1 auto; }
+  .marque > span { flex: 1 1 auto; overflow: hidden; }
+  .marque small { overflow: hidden; text-overflow: ellipsis; }
+  .badge-beta { flex-shrink: 0; }
   .titre-ligne { min-width: 0; }
   .marque small { font-size: .74rem; display: block; white-space: nowrap; }
   .badge-beta { font-size: .52rem; padding: 3px 5px; border-radius: 6px; transform: none; }

@@ -1,5 +1,5 @@
 {
- "version": "0.9.2",
+ "version": "0.9.3",
  "beta": true,
  "actualites": [
   {
@@ -10,6 +10,16 @@
   }
  ],
  "mises_a_jour": [
+  {
+   "version": "0.9.3",
+   "date": "2026-10-14",
+   "nouveautes": [
+    {
+     "type": "correction",
+     "texte": "Téléphone : le bouton de connexion ne sort plus de l'écran sur les petits téléphones"
+    }
+   ]
+  },
   {
    "version": "0.9.2",
    "date": "2026-10-14",
