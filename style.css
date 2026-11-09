@@ -821,3 +821,11 @@ input:not([type=checkbox]), textarea, select { width: 100%; }
   .maj:hover { transform: none; }
   .lien-helper:hover { transform: none; }
 }
+
+/* Le nom Entarsh™ */
+.lien-marque { font: inherit; color: var(--accent, inherit); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.panneau-marque { width: min(640px, 100% - 24px); }
+.marque-corps { display: flex; flex-direction: column; gap: 14px; padding: 18px 22px 22px; }
+.marque-corps h3 { margin: 0 0 4px; font: 700 1rem "Space Grotesk", sans-serif; }
+.marque-corps p { margin: 0; line-height: 1.6; }
+.marque-pied { color: var(--doux); font-size: .82rem; padding-top: 12px; border-top: 1px solid var(--ligne, rgba(255,255,255,.12)); }

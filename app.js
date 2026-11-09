@@ -149,6 +149,9 @@
   $('bouton-compte').addEventListener('click', () => ouvrirCompte());
   $('fermer-compte').addEventListener('click', () => $('fenetre-compte').close());
   $('fenetre-compte').addEventListener('click', e => { if (e.target === $('fenetre-compte')) $('fenetre-compte').close(); });
+  $('ouvrir-marque').addEventListener('click', () => $('fenetre-marque').showModal());
+  $('fermer-marque').addEventListener('click', () => $('fenetre-marque').close());
+  $('fenetre-marque').addEventListener('click', e => { if (e.target === $('fenetre-marque')) $('fenetre-marque').close(); });
   $('cp-deconnexion').addEventListener('click', async () => { await deconnecter(); $('fenetre-compte').close(); });
 
   // ---------- Profil ----------
