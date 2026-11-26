@@ -171,8 +171,7 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
     <form class="card authc" id="aform" autocomplete="on">
       <div class="seg" id="amode"><button type="button" data-am="in" class="on">Se connecter</button><button type="button" data-am="up">Créer un compte</button></div>
       <h3 id="atitle">Connexion</h3>
-      <label class="f" id="apseudo-l" hidden>Pseudo<input type="text" id="apseudo" maxlength="30" autocomplete="nickname" placeholder="Ex. : PixelMaster"></label>
-      <label class="f">E-mail<input type="email" id="aemail" required autocomplete="email" placeholder="toi@exemple.fr"></label>
+      <label class="f">Pseudo<input type="text" id="apseudo" required maxlength="30" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ex. : PixelMaster"></label>
       <label class="f">Mot de passe<input type="password" id="apass" required minlength="6" autocomplete="current-password" placeholder="6 caractères minimum"></label>
       <button class="btn" type="submit" id="abtn">Se connecter</button>
       <p class="sub" id="amsg" style="margin:0"></p>
@@ -260,7 +259,8 @@ const sv=p=>'<svg class="i" viewBox="0 0 24 24" aria-hidden="true">'+p+'</svg>';
 const svg=k=>sv((IC[k]||IC.liste)[1]);
 const TABS=[['taches','Tâches','liste'],['moi','Moi','moi'],['creer','Créer','plus'],['listes','Listes','dossier'],['equipe','Équipe','equipe']];
 const DIFF=['','Facile','Moyen','Difficile'],URG=['','Urgent','Cette semaine','Pas pressé'];
-const BUCKET='pieces-jointes',MAXB=50*1024*1024;
+const BUCKET='pieces-jointes',MAXB=50*1024*1024,LOGIN_DOMAIN='@forge.entarsh-studio.github.io';
+const loginOf=p=>String(p||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-').replace(/^[-._]+|[-._]+$/g,'').slice(0,40);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=id=>document.getElementById(id);
 const toast=m=>{const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',4000)};
@@ -321,9 +321,10 @@ const sb=configured&&window.supabase?window.supabase.createClient(CFG.url,CFG.an
 let session=null,me=null,loaded=false,chan=null;
 const PR={},URLS={};let LISTS=[],TASKS=[];
 const frErr=e=>{const m=(e&&(e.message||e.error_description))||'';
-  if(/Invalid login/i.test(m))return 'E-mail ou mot de passe incorrect.';
-  if(/already registered|already been registered/i.test(m))return 'Un compte existe déjà avec cet e-mail.';
-  if(/Email not confirmed/i.test(m))return 'Confirme d’abord ton e-mail avec le lien reçu.';
+  if(/Invalid login/i.test(m))return 'Pseudo ou mot de passe incorrect.';
+  if(/already registered|already been registered|already exists/i.test(m))return 'Ce pseudo est déjà pris.';
+  if(/Email not confirmed/i.test(m))return 'Compte bloqué : l’administrateur doit désactiver « Confirm email » dans Supabase.';
+  if(/email.*invalid|invalid.*email/i.test(m))return 'Ce pseudo ne peut pas servir d’identifiant, essaies-en un autre.';
   if(/Password should be/i.test(m))return 'Le mot de passe doit faire au moins 6 caractères.';
   if(/rate limit|too many/i.test(m))return 'Trop d’essais, attends quelques minutes.';
   if(/row-level security|permission|Seule la personne/i.test(m))return m.includes('Seule')?'Seule la personne concernée peut cocher cette tâche.':'Action non autorisée.';
@@ -447,7 +448,8 @@ function render(){
   const cnt=f=>{const a=tasks.filter(f);const d=a.filter(t=>doneAt(t)).length;return (a.length-d)+' à faire · '+d+' faite'+(d>1?'s':'')};
   $('lists').innerHTML=!loaded?'<div class="empty"><b>Chargement…</b></div>':!lists.length?'<div class="empty"><b>Aucune liste</b>Crée-en une dans l’onglet Créer.</div>':'<div class="rows">'+lists.map(l=>'<div class="lrow"><div class="ico">'+svg(l.icon)+'</div><div><div class="tt">'+esc(l.name)+'</div><div class="sub">'+cnt(t=>t.list===l.key)+' · créée par '+esc(nm(l.uid))+'</div></div><div class="acts"><button type="button" class="ghost" data-open="'+esc(l.key)+'">Voir</button>'+(l.uid===me?'<button type="button" class="del'+(armed==='L'+l.key?' sure':'')+'" data-dl="'+esc(l.key)+'" aria-label="Supprimer la liste">'+(armed==='L'+l.key?'Supprimer ?':sv(P.trash))+'</button>':'')+'</div></div>').join('')+'</div>';
   $('team').innerHTML=!loaded?'<div class="empty"><b>Chargement…</b></div>':'<div class="rows">'+mem.map(id=>'<div class="lrow">'+avH(id,40)+'<div><div class="tt">'+esc(nm(id))+(id===me?' <span class="sub" style="display:inline">(toi)</span>':'')+'</div><div class="sub">'+cnt(t=>t.who===id)+'</div></div><span></span></div>').join('')+'</div>';
-  $('pemail').textContent=session.user.email?'Connecté avec '+session.user.email:'';
+  const lg=(session.user.user_metadata&&session.user.user_metadata.login)||String(session.user.email||'').split('@')[0];
+  $('pemail').textContent=lg?'Identifiant de connexion : '+lg:'';
   if(tab==='profil'&&loaded&&!$('pform').childElementCount)paintProf($('pform'),false);
   renderModal();
 }
@@ -609,18 +611,20 @@ $('tform').addEventListener('submit',e=>{
 function paintAuth(){
   [...$('amode').children].forEach(b=>b.classList.toggle('on',b.dataset.am===amode));
   $('atitle').textContent=amode==='in'?'Connexion':'Créer un compte';
-  $('apseudo-l').hidden=amode!=='up';$('abtn').textContent=amode==='in'?'Se connecter':'Créer mon compte';
+  $('abtn').textContent=amode==='in'?'Se connecter':'Créer mon compte';
   $('apass').autocomplete=amode==='in'?'current-password':'new-password';$('amsg').textContent='';
 }
 paintAuth();
 $('aform').addEventListener('submit',async e=>{
-  e.preventDefault();if(!sb)return;const email=$('aemail').value.trim(),password=$('apass').value,msg=$('amsg');
+  e.preventDefault();if(!sb)return;const pseudo=$('apseudo').value.trim().slice(0,30),password=$('apass').value,msg=$('amsg');
+  const login=loginOf(pseudo);
+  if(login.length<2){msg.textContent='Le pseudo doit contenir au moins 2 lettres ou chiffres.';$('apseudo').focus();return}
+  const email=login+LOGIN_DOMAIN;
   $('abtn').disabled=true;msg.textContent='';
   try{
     if(amode==='in'){chk(await sb.auth.signInWithPassword({email,password}))}
-    else{const pseudo=$('apseudo').value.trim().slice(0,30);if(!pseudo){msg.textContent='Choisis un pseudo.';$('apseudo').focus();return}
-      const r=chk(await sb.auth.signUp({email,password,options:{data:{pseudo},emailRedirectTo:location.href.split('#')[0]}}));
-      if(!r.data.session){msg.textContent='Compte créé ! Ouvre le lien reçu par e-mail pour le confirmer, puis connecte-toi.';amode='in';paintAuth();msg.textContent='Compte créé ! Ouvre le lien reçu par e-mail pour le confirmer, puis connecte-toi.'}}
+    else{const r=chk(await sb.auth.signUp({email,password,options:{data:{pseudo,login}}}));
+      if(!r.data.session){amode='in';paintAuth();msg.textContent='Compte créé, mais l’administrateur doit désactiver « Confirm email » dans Supabase pour que tu puisses te connecter.'}}
   }catch(err){msg.textContent=frErr(err)}finally{$('abtn').disabled=false}
 });
 function onSession(s){

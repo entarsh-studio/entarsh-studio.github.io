@@ -1,6 +1,6 @@
 # Forge — les tâches de l'équipe
 
-Forge est un site pour répartir les tâches d'un jeu vidéo entre plusieurs personnes : listes, tâches avec icône, difficulté et délai, cases à cocher, pièces jointes (captures d'écran comprises), comptes avec pseudo et icône, et un fond d'égaliseur animé.
+Forge est un site pour répartir les tâches d'un jeu vidéo entre plusieurs personnes : listes, tâches avec icône, difficulté et délai, cases à cocher, pièces jointes (captures d'écran comprises), comptes avec pseudo et icône (sans adresse e-mail), et un fond d'égaliseur animé.
 
 - **Hébergement du site** : GitHub Pages (gratuit)
 - **Comptes, données et fichiers** : Supabase (gratuit jusqu'à 500 Mo de base et 1 Go de fichiers)
@@ -25,17 +25,17 @@ Forge est un site pour répartir les tâches d'un jeu vidéo entre plusieurs per
 Forge est rangé dans le dossier `forge/` du dépôt `entarsh-studio/entarsh-studio.github.io`, dont GitHub Pages est déjà actif.
 Adresse du site : **https://entarsh-studio.github.io/forge/**
 
-## 3. Relier Supabase à l'adresse du site
+## 3. Désactiver la confirmation par e-mail (obligatoire)
 
-Dans Supabase : **Authentication** → **URL Configuration** :
-- **Site URL** : `https://entarsh-studio.github.io/forge/`
-- **Redirect URLs** : ajoute `https://entarsh-studio.github.io/forge/`
-
-Sinon, le lien de confirmation reçu par e-mail renverra vers une mauvaise page.
+Forge n'utilise pas d'adresse e-mail : on s'inscrit avec un pseudo et un mot de passe.
+Dans Supabase : **Authentication** → **Sign In / Providers** → **Email** → désactive **Confirm email** → **Save**.
+(Laisse le fournisseur *Email* lui-même activé : Forge s'en sert en interne.)
 
 ## 4. Inviter les collègues
 
-Envoie-leur simplement l'adresse du site. Chacun clique sur **Créer un compte** (pseudo, e-mail, mot de passe), confirme son e-mail, puis se connecte.
+Envoie-leur simplement l'adresse du site. Chacun clique sur **Créer un compte** (pseudo + mot de passe) et il est connecté directement.
+Le pseudo choisi à l'inscription sert d'**identifiant de connexion** : il ne change pas, même si on modifie ensuite le pseudo affiché dans *Mon compte*.
+Il n'y a pas de récupération de mot de passe par e-mail : en cas d'oubli, supprime le compte dans **Authentication** → **Users** et la personne en recrée un.
 
 ### Fermer les inscriptions (recommandé)
 
@@ -54,5 +54,4 @@ Pour ajouter quelqu'un plus tard : rouvre-les quelques minutes, ou utilise **Aut
   - Ces règles sont vérifiées par la base de données, pas seulement par la page.
 - **Pièces jointes** : tous types de fichiers (images, vidéos, PDF, .zip, .blend, .fbx…), 50 Mo maximum par fichier. Colle une capture avec **Ctrl+V** dans l'onglet *Créer* ou dans la fiche d'une tâche.
 - **Musique** : le bouton *Musique* lit un fichier audio de ton appareil et les barres du fond suivent le son. La musique n'est envoyée à personne.
-- **E-mails de confirmation** : le service d'e-mail intégré à Supabase envoie peu de messages par heure. Si l'équipe s'inscrit en même temps et que des e-mails n'arrivent pas, attends un peu. Tu peux aussi désactiver la confirmation : **Authentication** → **Sign In / Providers** → **Email** → *Confirm email*.
 - **Projet en pause** : un projet Supabase gratuit sans aucune visite pendant 7 jours est mis en pause. Il suffit de le relancer depuis le tableau de bord Supabase.
