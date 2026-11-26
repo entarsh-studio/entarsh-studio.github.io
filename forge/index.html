@@ -152,6 +152,9 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
 .authc{max-width:440px;margin:6vh auto 0}
 .authc .seg{width:100%}.authc .seg button{flex:1}
 #amsg:empty{display:none}
+.pw{position:relative}.pw input{padding-right:52px}
+.eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:40px;border:0;background:none;border-radius:8px;color:var(--mute);display:grid;place-items:center}
+.eye:hover{color:var(--ink);background:#2a2e37}
 </style>
 </head>
 <body class="out">
@@ -172,7 +175,7 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
       <div class="seg" id="amode"><button type="button" data-am="in" class="on">Se connecter</button><button type="button" data-am="up">Créer un compte</button></div>
       <h3 id="atitle">Connexion</h3>
       <label class="f">Pseudo<input type="text" id="apseudo" required maxlength="30" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ex. : PixelMaster"></label>
-      <label class="f">Mot de passe<input type="password" id="apass" required minlength="6" autocomplete="current-password" placeholder="6 caractères minimum"></label>
+      <div class="f"><label for="apass">Mot de passe</label><div class="pw"><input type="password" id="apass" required minlength="6" autocomplete="current-password" placeholder="6 caractères minimum"><button type="button" class="eye" id="aeye" aria-label="Afficher le mot de passe" aria-pressed="false"></button></div></div>
       <button class="btn" type="submit" id="abtn">Se connecter</button>
       <p class="sub" id="amsg" style="margin:0"></p>
     </form>
@@ -612,9 +615,12 @@ function paintAuth(){
   [...$('amode').children].forEach(b=>b.classList.toggle('on',b.dataset.am===amode));
   $('atitle').textContent=amode==='in'?'Connexion':'Créer un compte';
   $('abtn').textContent=amode==='in'?'Se connecter':'Créer mon compte';
-  $('apass').autocomplete=amode==='in'?'current-password':'new-password';$('amsg').textContent='';
+  $('apass').autocomplete=amode==='in'?'current-password':'new-password';$('amsg').textContent=sb?'':'Le site n’est pas encore relié à Supabase : il manque les clés dans config.js.';
 }
 paintAuth();
+{const EYE='<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',EYEX=EYE+'<path d="M3 3l18 18"/>';
+ const paintEye=()=>{const shown=$('apass').type==='text';$('aeye').innerHTML=sv(shown?EYEX:EYE);$('aeye').setAttribute('aria-pressed',shown);$('aeye').setAttribute('aria-label',shown?'Masquer le mot de passe':'Afficher le mot de passe')};
+ paintEye();$('aeye').addEventListener('click',()=>{const i=$('apass');i.type=i.type==='password'?'text':'password';paintEye();i.focus()});}
 $('aform').addEventListener('submit',async e=>{
   e.preventDefault();if(!sb)return;const pseudo=$('apseudo').value.trim().slice(0,30),password=$('apass').value,msg=$('amsg');
   const login=loginOf(pseudo);
