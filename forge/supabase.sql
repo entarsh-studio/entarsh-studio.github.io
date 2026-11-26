@@ -10,6 +10,9 @@ create table if not exists public.profiles (
   icon        text not null default 'gamedesign',
   color       text not null default '#ff4d4d',
   photo       text not null default '',
+  music       text not null default '',
+  music_name  text not null default '',
+  volume      smallint not null default 70 check (volume between 0 and 100),
   created_at  timestamptz not null default now()
 );
 

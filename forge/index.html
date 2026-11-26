@@ -155,6 +155,57 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
 .pw{position:relative}.pw input{padding-right:52px}
 .eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:40px;border:0;background:none;border-radius:8px;color:var(--mute);display:grid;place-items:center}
 .eye:hover{color:var(--ink);background:#2a2e37}
+/* ouverture */
+.intro{position:fixed;inset:0;z-index:60;background:#0b0b0d;display:grid;place-items:center;align-content:center;gap:24px;transition:opacity .5s;cursor:pointer}
+.intro.out{opacity:0;pointer-events:none}
+.intro svg{width:min(46vw,220px);height:auto;fill:none;stroke:#ffae00;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;animation:glow .9s 2.1s ease forwards}
+.intro svg .k{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .9s ease forwards}
+.intro svg .d1{stroke-width:6;animation-delay:.15s}.intro svg .d2{animation-delay:.55s}.intro svg .d3{animation-delay:.95s;stroke-width:7}.intro svg .d4{animation-delay:1.35s;stroke-width:12}.intro svg .d5{animation-delay:1.45s;stroke-width:12}
+.it{text-align:center;opacity:0;transform:translateY(8px);animation:rise .6s 2.1s ease forwards}
+.it span{display:block;color:#a4a9b4;font-size:15px;font-weight:600}
+.it b{display:block;font-size:42px;font-weight:800;color:#fff;letter-spacing:-.01em}
+.skip{position:absolute;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));border:1px solid #2c3039;background:#17191e;border-radius:99px;min-height:40px;padding:4px 16px;font-weight:600;color:#a4a9b4}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes glow{to{filter:drop-shadow(0 0 22px rgba(255,174,0,.5))}}
+@keyframes rise{to{opacity:1;transform:none}}
+/* chargement */
+.loader{display:grid;justify-items:center;gap:12px;padding:40px 20px;color:var(--mute);font-weight:600;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.loader svg{width:48px;height:48px;fill:none;stroke:var(--red);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.loader svg .k{stroke-dasharray:1;stroke-dashoffset:1;animation:lhex 1.8s ease-in-out infinite}
+.loader svg .c{animation-delay:.3s}
+@keyframes lhex{50%{stroke-dashoffset:0}100%{stroke-dashoffset:-1}}
+.eqb{display:flex;gap:4px;height:22px;align-items:flex-end}
+.eqb i{width:5px;height:5px;background:var(--red);border-radius:2px;animation:eqb .9s ease-in-out infinite}
+.eqb i:nth-child(2){animation-delay:-.45s}.eqb i:nth-child(3){animation-delay:-.2s}.eqb i:nth-child(4){animation-delay:-.65s}.eqb i:nth-child(5){animation-delay:-.35s}
+@keyframes eqb{0%,100%{height:5px}50%{height:22px}}
+/* profil */
+.pwrap{display:grid;gap:16px;max-width:760px}
+.phero{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px 18px}
+.phero .av{width:88px;height:88px}
+.phero h3{font-size:26px;overflow-wrap:anywhere}
+.stats{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stat{background:var(--raise);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-size:22px;line-height:1.2}.stat span{font-size:13px;color:var(--mute)}
+.psecs{display:grid;gap:16px}
+.card h3 .h3s{display:block;font-size:14px;font-weight:500;color:var(--mute);margin-top:4px}
+.mrow{display:flex;align-items:center;gap:10px 12px;background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:10px 12px;flex-wrap:wrap}
+.mrow .mn{flex:1 1 160px;color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.vol{display:flex;align-items:center;gap:14px}
+.vol input{flex:1;accent-color:var(--red);height:28px;margin:0}
+.vol b{min-width:52px;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.savebar{position:sticky;bottom:16px;display:none;align-items:center;gap:10px;flex-wrap:wrap;background:var(--raise);border:1px solid var(--red);border-radius:12px;padding:10px 12px 10px 16px;box-shadow:0 12px 30px -10px #000;z-index:4}
+.savebar.show{display:flex}.savebar span{flex:1 1 180px;font-weight:600;color:var(--ink)}
+/* interrupteur */
+.sw{display:flex;align-items:center;gap:12px;font-weight:600;color:var(--ink);cursor:pointer;font-size:15px;min-height:44px}
+.sw input{appearance:none;-webkit-appearance:none;width:46px;height:26px;border-radius:99px;background:#3a3f4a;position:relative;margin:0;cursor:pointer;transition:background .15s;flex:none}
+.sw input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw input:checked{background:var(--red)}.sw input:checked::after{transform:translateX(20px)}
+/* confirmation */
+.cf{width:min(470px,100%)}
+.cfi{width:46px;height:46px;border-radius:12px;background:var(--amberbg);color:var(--amber);display:grid;place-items:center}
+.cf .acts{flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.savebar{bottom:76px}#confirm .ov{padding:16px}#confirm .modal{height:auto;border-radius:16px}}
+@media(prefers-reduced-motion:reduce){.loader svg .k,.eqb i{animation:none;stroke-dashoffset:0;height:12px}}
 </style>
 </head>
 <body class="out">
@@ -163,8 +214,7 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
   <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#ff4d4d"/><path d="M16 5l9 5v12l-9 5-9-5V10z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/><path d="M11.5 16.5l3 3 6-6.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
   <div class="brand"><h1>Forge</h1><p>Les tâches de l'équipe</p></div>
   <div class="hr">
-    <button type="button" class="hbtn mus" id="musb" title="Choisir une musique pour faire danser les barres"></button>
-    <input type="file" id="musf" accept="audio/*" hidden>
+    <button type="button" class="hbtn mus in-only" id="musb" title="Choisir une musique pour faire danser les barres"></button>
     <button type="button" class="hbtn in-only" id="meb" data-tab="profil" title="Mon compte"></button>
   </div>
 </header>
@@ -176,6 +226,7 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
       <h3 id="atitle">Connexion</h3>
       <label class="f">Pseudo<input type="text" id="apseudo" required maxlength="30" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ex. : PixelMaster"></label>
       <div class="f"><label for="apass">Mot de passe</label><div class="pw"><input type="password" id="apass" required minlength="6" autocomplete="current-password" placeholder="6 caractères minimum"><button type="button" class="eye" id="aeye" aria-label="Afficher le mot de passe" aria-pressed="false"></button></div></div>
+      <label class="sw"><input type="checkbox" id="aauto" checked>Se connecter automatiquement</label>
       <button class="btn" type="submit" id="abtn">Se connecter</button>
       <p class="sub" id="amsg" style="margin:0"></p>
     </form>
@@ -227,12 +278,17 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
   </section>
   <section class="view" id="v-profil">
     <div class="vh"><h2>Mon compte</h2></div>
-    <form class="card" id="pform" autocomplete="off" style="max-width:640px"></form>
-    <div class="card" style="max-width:640px;margin-top:16px"><div class="acts" style="justify-content:space-between;flex-wrap:wrap"><span class="sub" id="pemail"></span><button type="button" class="ghost" id="logout">Se déconnecter</button></div></div>
+    <div class="pwrap">
+      <div class="card phero" id="phero"></div>
+      <form id="pform" class="psecs" autocomplete="off"></form>
+      <div class="card"><h3>Compte<span class="h3s">Ta connexion à Forge</span></h3><div class="acts" style="justify-content:space-between;flex-wrap:wrap"><span class="sub" id="pemail"></span><button type="button" class="ghost" id="logout">Se déconnecter</button></div></div>
+    </div>
   </section>
   <p class="note" id="status"></p>
 </main>
 <div id="modal"></div>
+<div id="confirm"></div>
+<div id="intro"></div>
 <div class="toast" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
@@ -299,32 +355,60 @@ const eq={cv:$('eq'),bars:[],an:null,buf:null,audio:null,ctx:null};
   eq.start=()=>{if(!eq.run){eq.run=true;requestAnimationFrame(frame)}};
   eq.start();
 }
-const paintMus=()=>{const a=eq.audio,b=$('musb');
-  b.innerHTML=a?sv(a.paused?P.play:P.pause)+'<span class="tn"></span>':sv(P.note)+'<span class="tn">Musique</span>';
-  if(a)b.querySelector('.tn').textContent=eq.name;b.classList.toggle('on',!!(a&&!a.paused))};
+/* ---------- musique (seulement connecté) ---------- */
+const PHONE=matchMedia('(max-width:700px),(pointer:coarse)');
+const DEFAULT_MUSIC=['ForgeSound.mp3','Forge Sound'];
+const mus={vol:0.7,key:'',name:'',want:false};
+function applyVol(){if(!eq.audio)return;if(eq.gain){eq.gain.gain.value=PHONE.matches?0:mus.vol}else{eq.audio.muted=PHONE.matches;eq.audio.volume=mus.vol}}
+function ensureAudio(){
+  if(eq.audio)return;
+  eq.audio=new Audio();eq.audio.loop=true;eq.audio.crossOrigin='anonymous';eq.audio.preload='auto';
+  eq.audio.addEventListener('play',()=>{paintMus();eq.start()});eq.audio.addEventListener('pause',paintMus);
+  const C=window.AudioContext||window.webkitAudioContext;
+  if(C){try{eq.ctx=new C();const src=eq.ctx.createMediaElementSource(eq.audio);eq.an=eq.ctx.createAnalyser();eq.an.fftSize=256;eq.an.smoothingTimeConstant=0.75;eq.buf=new Uint8Array(eq.an.frequencyBinCount);eq.gain=eq.ctx.createGain();src.connect(eq.an);eq.an.connect(eq.gain);eq.gain.connect(eq.ctx.destination)}catch(e){eq.ctx=null;eq.gain=null}}
+  applyVol();PHONE.addEventListener('change',applyVol);
+}
+function setMusic(key,src,name){ensureAudio();mus.name=name;paintMus();if(mus.key===key)return;mus.key=key;eq.audio.src=src;if(mus.want)tryPlay()}
+let unlock=null;
+function tryPlay(){
+  mus.want=true;if(!eq.audio||!session)return;
+  eq.ctx&&eq.ctx.resume();
+  eq.audio.play().catch(()=>{
+    if(unlock)return;
+    unlock=ev=>{removeEventListener('pointerdown',unlock,true);removeEventListener('keydown',unlock,true);unlock=null;
+      if(ev.target&&ev.target.closest&&ev.target.closest('#musb'))return;
+      if(session&&mus.want){eq.ctx&&eq.ctx.resume();eq.audio.play().catch(()=>{})}};
+    addEventListener('pointerdown',unlock,true);addEventListener('keydown',unlock,true)});
+}
+function stopMusic(){mus.want=false;if(eq.audio){eq.audio.pause();try{eq.audio.currentTime=0}catch(e){}}}
+const paintMus=()=>{const a=eq.audio,b=$('musb'),on=!!(a&&!a.paused);
+  b.innerHTML=sv(on?P.pause:P.play)+'<span class="tn"></span>';b.querySelector('.tn').textContent=mus.name||'Musique';
+  b.classList.toggle('on',on);b.title=on?'Mettre la musique en pause':'Lancer la musique'};
 paintMus();
-$('musb').addEventListener('click',()=>{if(!eq.audio){$('musf').click();return}
-  if(eq.audio.paused){eq.ctx&&eq.ctx.resume();eq.audio.play().catch(()=>{})}else eq.audio.pause()});
-$('musb').addEventListener('contextmenu',e=>{e.preventDefault();$('musf').click()});
-$('musf').addEventListener('change',e=>{
-  const f=e.target.files[0];if(!f)return;e.target.value='';
-  try{
-    if(!eq.audio){eq.audio=new Audio();eq.audio.loop=true;
-      eq.audio.addEventListener('play',()=>{paintMus();eq.start()});eq.audio.addEventListener('pause',paintMus);
-      const C=window.AudioContext||window.webkitAudioContext;
-      if(C){eq.ctx=new C();const src=eq.ctx.createMediaElementSource(eq.audio);eq.an=eq.ctx.createAnalyser();eq.an.fftSize=256;eq.an.smoothingTimeConstant=0.75;eq.buf=new Uint8Array(eq.an.frequencyBinCount);eq.gain=eq.ctx.createGain();src.connect(eq.an);eq.an.connect(eq.gain);eq.gain.connect(eq.ctx.destination);
-        const mq=matchMedia('(max-width:700px),(pointer:coarse)'),setVol=()=>{eq.gain.gain.value=mq.matches?0:1};setVol();mq.addEventListener('change',setVol)}}
-    if(eq.url)URL.revokeObjectURL(eq.url);
-    eq.url=URL.createObjectURL(f);eq.audio.src=eq.url;eq.name=f.name.replace(/\.[^.]+$/,'');
-    eq.ctx&&eq.ctx.resume();eq.audio.play().catch(()=>toast('Appuie sur le bouton lecture pour lancer la musique.'));paintMus();
-    toast('Clic droit (ou appui long) sur le bouton pour changer de musique.');
-  }catch(err){toast('Impossible de lire ce fichier audio.')}
-});
+$('musb').addEventListener('click',()=>{if(!eq.audio)return;if(eq.audio.paused){eq.ctx&&eq.ctx.resume();mus.want=true;eq.audio.play().catch(()=>toast('Impossible de lire la musique.'))}else{mus.want=false;eq.audio.pause()}});
+function musicOf(p){p=p||{};if(p.music&&URLS[p.music])return [p.music,URLS[p.music],p.music_name||'Ma musique'];return [DEFAULT_MUSIC[0],DEFAULT_MUSIC[0],DEFAULT_MUSIC[1]]}
+function applyProfileMusic(){const p=PR[me]||{};mus.vol=(Number.isFinite(p.volume)?p.volume:70)/100;const [k,u,n]=musicOf(p);setMusic(k,u,n);applyVol()}
+
+/* ---------- animation d'ouverture ---------- */
+function playIntro(done){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){done();return}
+  const el=$('intro');
+  el.innerHTML='<div class="intro"><svg viewBox="0 0 256 256" aria-hidden="true"><circle class="k d1" cx="128" cy="128" r="122" pathLength="1"/><path class="k d2" d="M70 30H186L238 128L186 226H70L18 128Z" pathLength="1"/><path class="k d3" d="M128 42L203 85V171L128 214L53 171V85Z" pathLength="1"/><path class="k d4" d="M128 72V198" pathLength="1"/><ellipse class="k d5" cx="128" cy="133" rx="44" ry="36" pathLength="1"/></svg><div class="it"><span>Entarsh Studio</span><b>Forge</b></div><button type="button" class="skip">Passer</button></div>';
+  let fin=false;const end=()=>{if(fin)return;fin=true;const o=el.firstChild;if(o)o.classList.add('out');setTimeout(()=>{if(fin)el.innerHTML=''},520);done()};
+  el.firstChild.addEventListener('click',end);setTimeout(end,3500);
+}
+const LOADER=(t)=>'<div class="loader"><svg viewBox="0 0 32 32" aria-hidden="true"><path class="k" d="M16 3l11 6.3v13.4L16 29 5 22.7V9.3z" pathLength="1"/><path class="k c" d="M11 16.5l3.5 3.5 6.5-7" pathLength="1"/></svg><div class="eqb"><i></i><i></i><i></i><i></i><i></i></div><span>'+(t||'Allumage de la forge…')+'</span></div>';
 
 /* ---------- Supabase ---------- */
 const CFG=window.FORGE_CONFIG||{};
 const configured=CFG.url&&!/TON-PROJET/.test(CFG.url)&&CFG.anonKey&&!/COLLE-ICI/.test(CFG.anonKey);
-const sb=configured&&window.supabase?window.supabase.createClient(CFG.url,CFG.anonKey):null;
+const AUTO_KEY='forge-auto';
+const autoOn=()=>{try{return localStorage.getItem(AUTO_KEY)!=='0'}catch(e){return true}};
+const authStore={
+  getItem:k=>{try{return localStorage.getItem(k)??sessionStorage.getItem(k)}catch(e){return null}},
+  setItem:(k,v)=>{try{const a=autoOn();(a?localStorage:sessionStorage).setItem(k,v);(a?sessionStorage:localStorage).removeItem(k)}catch(e){}},
+  removeItem:k=>{try{localStorage.removeItem(k);sessionStorage.removeItem(k)}catch(e){}}};
+const sb=configured&&window.supabase?window.supabase.createClient(CFG.url,CFG.anonKey,{auth:{storage:authStore,persistSession:true,autoRefreshToken:true}}):null;
 let session=null,me=null,loaded=false,chan=null;
 const PR={},URLS={};let LISTS=[],TASKS=[];
 const frErr=e=>{const m=(e&&(e.message||e.error_description))||'';
@@ -404,7 +488,7 @@ function rowsHtml(arr,lists,showList){
   }).join('')+'</div>';
 }
 function grouped(arr,stat,lists,showList,emptyMsg){
-  if(!loaded)return '<div class="empty"><b>Chargement…</b></div>';
+  if(!loaded)return LOADER();
   if(!arr.length)return '<div class="empty">'+emptyMsg+'</div>';
   if(stat==='done')return rowsHtml(arr.sort((a,b)=>doneAt(b)-doneAt(a)),lists,showList);
   const col=['','var(--red)','var(--amber)','#6b7180'];
@@ -412,21 +496,42 @@ function grouped(arr,stat,lists,showList,emptyMsg){
     return g.length?'<div class="grp"><h3><span class="dot" style="background:'+col[u]+'"></span>'+URG[u]+' · '+g.length+'</h3>'+rowsHtml(g,lists,showList)+'</div>':''}).join('');
 }
 
+function baseProf(){const m=PR[me]||{};return {pseudo:m.pseudo||'',icon:AVI[m.icon]?m.icon:'gamedesign',color:COLS.includes(m.color)?m.color:COLS[0],photo:m.photo||'',music:m.music||'',music_name:m.music_name||'',volume:Number.isFinite(m.volume)?m.volume:70}}
+const PKEYS=['pseudo','icon','color','photo','music','volume'];
+const profDirty=()=>{if(!prof||tab!=='profil')return false;const b=baseProf();return PKEYS.some(k=>String(prof[k]??'').trim()!==String(b[k]??'').trim())};
+function updDirty(){const sb2=$('savebar');if(sb2)sb2.classList.toggle('show',profDirty())}
 function profForm(first){
-  const m=PR[me]||{};
-  if(!prof)prof={pseudo:m.pseudo||'',icon:AVI[m.icon]?m.icon:'gamedesign',color:COLS.includes(m.color)?m.color:COLS[0],photo:m.photo||''};
-  return (first?'<h3>Termine ton compte</h3><p class="note" style="margin:0">Choisis un pseudo et une icône : c’est ce que verra le reste de l’équipe.</p>':'')+
-  '<div class="prof">'+avH(me,72,prof)+'<div><div class="tt" id="pprev"></div><div class="sub">Aperçu</div></div></div>'+
+  if(!prof)prof=baseProf();
+  const ident='<div class="prof">'+avH(me,72,prof)+'<div><div class="tt" id="pprev"></div><div class="sub">Aperçu</div></div></div>'+
   '<label class="f">Pseudo<input type="text" id="ppseudo" maxlength="30" placeholder="Ex. : PixelMaster"></label>'+
   '<div class="f">Icône<div class="icons">'+Object.keys(AVI).map(k=>'<button type="button" data-pi="'+k+'" class="'+(k===prof.icon&&!prof.photo?'on':'')+'">'+sv(AVI[k][1])+AVI[k][0]+'</button>').join('')+'</div></div>'+
   '<div class="f">Couleur<div class="cols">'+COLS.map(c=>'<button type="button" data-pc="'+c+'" class="'+(c===prof.color?'on':'')+'" style="background:'+c+'" aria-label="Couleur"></button>').join('')+'</div></div>'+
-  '<div class="f">Ou une photo<div class="acts"><label class="ghost" style="display:inline-flex;align-items:center;cursor:pointer">'+(busy?'Envoi…':'Choisir une image')+'<input type="file" id="pphoto" accept="image/*" hidden></label>'+(prof.photo?'<button type="button" class="ghost" data-pnophoto="1">Retirer la photo</button>':'')+'</div></div>'+
-  '<div class="acts"><button class="btn" type="submit"'+(busy?' disabled':'')+'>'+(first?'C’est parti':'Enregistrer')+'</button>'+(first?'<button type="button" class="ghost" data-later="1">Plus tard</button>':'')+'</div>';
+  '<div class="f">Ou une photo<div class="acts"><label class="ghost" style="display:inline-flex;align-items:center;cursor:pointer">'+(busy==='photo'?'Envoi…':'Choisir une image')+'<input type="file" id="pphoto" accept="image/*" hidden></label>'+(prof.photo?'<button type="button" class="ghost" data-pnophoto="1">Retirer la photo</button>':'')+'</div></div>';
+  if(first)return '<h3>Termine ton compte</h3><p class="note" style="margin:0">Choisis un pseudo et une icône : c’est ce que verra le reste de l’équipe.</p>'+ident+
+    '<div class="acts"><button class="btn" type="submit"'+(busy?' disabled':'')+'>C’est parti</button><button type="button" class="ghost" data-later="1">Plus tard</button></div>';
+  return '<section class="card"><h3>Identité<span class="h3s">Ce que voit le reste de l’équipe</span></h3>'+ident+'</section>'+
+  '<section class="card"><h3>Préférences<span class="h3s">Enregistrées sur ton compte, sur tous tes appareils</span></h3>'+
+  '<div class="f">Musique<div class="mrow"><span class="mn">'+sv(P.note)+'<span id="pmname"></span></span>'+
+    '<label class="ghost" style="display:inline-flex;align-items:center;cursor:pointer">'+(busy==='music'?'Envoi…':'Changer…')+'<input type="file" id="pmusic" accept="audio/*" hidden></label>'+
+    (prof.music?'<button type="button" class="ghost" data-pdefmus="1">Musique par défaut</button>':'')+'</div></div>'+
+  '<label class="f">Volume<div class="vol"><input type="range" id="pvol" min="0" max="100" step="5"><b id="pvolv"></b></div></label>'+
+  '<p class="sub" style="margin:0">Sur téléphone et tablette, le son est coupé : seules les barres du fond bougent au rythme de la musique.</p></section>'+
+  '<div class="savebar" id="savebar" role="status"><span>Modifications non enregistrées</span><button type="button" class="ghost" data-pcancel="1">Annuler</button><button class="btn" type="submit"'+(busy?' disabled':'')+'>Enregistrer</button></div>';
 }
 function paintProf(el,first){
   const keep=el.querySelector('#ppseudo');const val=keep?keep.value:prof?prof.pseudo:(PR[me]&&PR[me].pseudo)||'';
   el.innerHTML=profForm(first);const inp=el.querySelector('#ppseudo');inp.value=val;prof.pseudo=val;
   el.querySelector('#pprev').textContent=val.trim()||'Ton pseudo';
+  const mn=el.querySelector('#pmname');if(mn)mn.textContent=prof.music?(prof.music_name||'Ma musique'):'Forge Sound (par défaut)';
+  const pv=el.querySelector('#pvol');if(pv){pv.value=prof.volume;el.querySelector('#pvolv').textContent=prof.volume+' %'}
+  updDirty();
+}
+function paintHero(){
+  const tasks=allTasks(),mineT=tasks.filter(t=>t.who===me);
+  const st=[[mineT.filter(t=>!doneAt(t)).length,'à faire pour moi'],[mineT.filter(t=>doneAt(t)).length,'faites par moi'],[tasks.filter(t=>t.uid===me).length,'tâches créées'],[allLists().filter(l=>l.uid===me).length,'listes créées']];
+  const lg=(session.user.user_metadata&&session.user.user_metadata.login)||String(session.user.email||'').split('@')[0];
+  $('phero').innerHTML=avH(me,88)+'<div><h3 id="phn"></h3><div class="sub" id="phl"></div></div><div class="stats">'+st.map(([n,l])=>'<div class="stat"><b>'+n+'</b><span>'+l+'</span></div>').join('')+'</div>';
+  $('phn').textContent=nm(me);$('phl').textContent='Identifiant : '+lg;
 }
 
 function render(){
@@ -454,11 +559,11 @@ function render(){
   $('tasks').innerHTML=grouped(byStat(v,fstat),fstat,lists,fl==='all',!lists.length?'<b>Aucune liste pour l’instant</b>Va dans l’onglet Créer pour faire ta première liste.':fstat==='done'?'<b>Rien de terminé ici</b>Les tâches cochées apparaissent dans cet onglet.':'<b>Tout est fait</b>Ajoute des tâches dans l’onglet Créer.');
   $('mine').innerHTML=grouped(byStat(tasks.filter(t=>t.who===me),mstat),mstat,lists,true,mstat==='done'?'<b>Rien de terminé</b>Tes tâches cochées apparaîtront ici.':'<b>Rien pour toi</b>Aucune tâche ne t’est attribuée pour l’instant.');
   const cnt=f=>{const a=tasks.filter(f);const d=a.filter(t=>doneAt(t)).length;return (a.length-d)+' à faire · '+d+' faite'+(d>1?'s':'')};
-  $('lists').innerHTML=!loaded?'<div class="empty"><b>Chargement…</b></div>':!lists.length?'<div class="empty"><b>Aucune liste</b>Crée-en une dans l’onglet Créer.</div>':'<div class="rows">'+lists.map(l=>'<div class="lrow"><div class="ico">'+svg(l.icon)+'</div><div><div class="tt">'+esc(l.name)+'</div><div class="sub">'+cnt(t=>t.list===l.key)+' · créée par '+esc(nm(l.uid))+'</div></div><div class="acts"><button type="button" class="ghost" data-open="'+esc(l.key)+'">Voir</button>'+(l.uid===me?'<button type="button" class="del'+(armed==='L'+l.key?' sure':'')+'" data-dl="'+esc(l.key)+'" aria-label="Supprimer la liste">'+(armed==='L'+l.key?'Supprimer ?':sv(P.trash))+'</button>':'')+'</div></div>').join('')+'</div>';
-  $('team').innerHTML=!loaded?'<div class="empty"><b>Chargement…</b></div>':'<div class="rows">'+mem.map(id=>'<div class="lrow">'+avH(id,40)+'<div><div class="tt">'+esc(nm(id))+(id===me?' <span class="sub" style="display:inline">(toi)</span>':'')+'</div><div class="sub">'+cnt(t=>t.who===id)+'</div></div><span></span></div>').join('')+'</div>';
+  $('lists').innerHTML=!loaded?LOADER():!lists.length?'<div class="empty"><b>Aucune liste</b>Crée-en une dans l’onglet Créer.</div>':'<div class="rows">'+lists.map(l=>'<div class="lrow"><div class="ico">'+svg(l.icon)+'</div><div><div class="tt">'+esc(l.name)+'</div><div class="sub">'+cnt(t=>t.list===l.key)+' · créée par '+esc(nm(l.uid))+'</div></div><div class="acts"><button type="button" class="ghost" data-open="'+esc(l.key)+'">Voir</button>'+(l.uid===me?'<button type="button" class="del'+(armed==='L'+l.key?' sure':'')+'" data-dl="'+esc(l.key)+'" aria-label="Supprimer la liste">'+(armed==='L'+l.key?'Supprimer ?':sv(P.trash))+'</button>':'')+'</div></div>').join('')+'</div>';
+  $('team').innerHTML=!loaded?LOADER():'<div class="rows">'+mem.map(id=>'<div class="lrow">'+avH(id,40)+'<div><div class="tt">'+esc(nm(id))+(id===me?' <span class="sub" style="display:inline">(toi)</span>':'')+'</div><div class="sub">'+cnt(t=>t.who===id)+'</div></div><span></span></div>').join('')+'</div>';
   const lg=(session.user.user_metadata&&session.user.user_metadata.login)||String(session.user.email||'').split('@')[0];
-  $('pemail').textContent=lg?'Identifiant de connexion : '+lg:'';
-  if(tab==='profil'&&loaded&&!$('pform').childElementCount)paintProf($('pform'),false);
+  $('pemail').textContent=lg?'Connecté en tant que '+lg+(autoOn()?' · connexion automatique activée':''):'';
+  if(tab==='profil'&&loaded){paintHero();if(!$('pform').childElementCount)paintProf($('pform'),false)}
   renderModal();
 }
 
@@ -500,7 +605,7 @@ async function loadAll(){
   if(!PR[me]){const meta=(session.user.user_metadata||{});const row={id:me,pseudo:String(meta.pseudo||'').slice(0,30),icon:'gamedesign',color:'#ff4d4d'};
     const r=await sb.from('profiles').upsert(row).select().single();if(!r.error)PR[me]=r.data}
   await signAll().catch(()=>{});
-  loaded=true;$('status').textContent='';render();
+  loaded=true;$('status').textContent='';applyProfileMusic();render();
 }
 let rt;const reload=()=>{clearTimeout(rt);rt=setTimeout(()=>loadAll().catch(e=>toast(frErr(e))),200)};
 setInterval(()=>{if(session){for(const k in URLS)delete URLS[k];reload()}},5*3600*1000);
@@ -547,7 +652,9 @@ document.addEventListener('click',ev=>{
   if(ds.zoom){const z=document.createElement('button');z.className='lb2';z.type='button';z.setAttribute('aria-label','Fermer');const im=document.createElement('img');im.src=ds.zoom;im.alt='';z.appendChild(im);z.onclick=()=>z.remove();document.body.appendChild(z);return}
   if(ds.dd){openDD=openDD===ds.dd?null:ds.dd;ddAll();if(openDD){const o=$(openDD).querySelector('.ddm .on')||$(openDD).querySelector('.ddm button');o&&o.focus()}return}
   if(ds.ddo){dd[ds.ddo].v=ds.val;openDD=null;ddAll();$(ds.ddo).querySelector('.ddb').focus();if(ds.ddo==='flist')render();return}
-  if(ds.tab){location.hash=ds.tab;setTab(ds.tab);return}
+  if(ds.tab){const t=ds.tab;if(t===tab)return;guard(()=>{location.hash=t;setTab(t)});return}
+  if(ds.pcancel){prof=null;applyProfileMusic();paintProf($('pform'),false);return}
+  if(ds.pdefmus){prof.music='';prof.music_name='';setMusic(DEFAULT_MUSIC[0],DEFAULT_MUSIC[0],DEFAULT_MUSIC[1]);rerenderProf();return}
   if(ds.t){openT=ds.t;armed=null;renderModal();return}
   if(ds.li){licon=ds.li;pickers();return}
   if(ds.ti){ticon=ds.ti;pickers();return}
@@ -562,7 +669,7 @@ document.addEventListener('click',ev=>{
   if(ds.rp){const p=pend.splice(+ds.rp,1)[0];if(p&&p.local)URL.revokeObjectURL(p.local);render();return}
   if(ds.rf){const t=findT(openT);if(!t||t.uid!==me)return;const files=[...t.files];const gone=files.splice(+ds.rf,1)[0];
     run(async()=>{chk(await sb.from('tasks').update({files}).eq('id',t.id));if(gone&&gone.path)await sb.storage.from(BUCKET).remove([gone.path])});return}
-  if(ds.open){dd.flist.v=ds.open;location.hash='taches';setTab('taches');return}
+  if(ds.open){const v=ds.open;guard(()=>{dd.flist.v=v;location.hash='taches';setTab('taches')});return}
   if(ds.c){const id=ds.c,row=TASKS.find(x=>x.id===id);if(row){row.done_at=row.done_at?null:new Date().toISOString();render()}
     run(async()=>chk(await sb.rpc('toggle_done',{tid:id})));return}
   if(ds.x){if(armed!==ds.x){armed=ds.x;render();return}
@@ -574,29 +681,57 @@ document.addEventListener('click',ev=>{
       if(mt.length)chk(await sb.from('tasks').delete().in('id',mt.map(t=>t.id)));
       chk(await sb.from('lists').delete().eq('id',id));if(paths.length)await sb.storage.from(BUCKET).remove(paths)});return}
 });
-$('logout').addEventListener('click',()=>sb.auth.signOut());
+$('logout').addEventListener('click',()=>guard(()=>sb.auth.signOut()));
+const WARN='<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>';
+function isDirty(){if(!session)return false;if(tab==='creer')return !!($('ttitle').value.trim()||pend.length||$('lname').value.trim());if(tab==='profil')return profDirty();return false}
+function discard(){if(tab==='creer'){$('ttitle').value='';$('lname').value='';pend.forEach(p=>p.local&&URL.revokeObjectURL(p.local));pend=[]}if(tab==='profil'){prof=null;applyProfileMusic()}}
+function guard(go){if(!isDirty()){go();return}
+  const c=$('confirm'),pf=tab==='profil';
+  c.innerHTML='<div class="ov"><div class="modal cf" role="alertdialog" aria-modal="true" aria-labelledby="cft" aria-describedby="cfd"><div class="cfi">'+sv(WARN)+'</div><h3 id="cft">Modifications non enregistrées</h3><p class="sub" id="cfd" style="font-size:15px;margin:0">'+(pf?'Tu as modifié ton profil sans l’enregistrer.':'Tu as commencé à remplir un formulaire sans le valider.')+' Si tu quittes maintenant, ces changements seront perdus.</p><div class="acts"><button type="button" class="ghost" id="cfleave">Quitter sans enregistrer</button>'+(pf?'<button type="button" class="ghost" id="cfstay">Rester</button><button type="button" class="btn" id="cfsave">Enregistrer et continuer</button>':'<button type="button" class="btn" id="cfstay">Rester</button>')+'</div></div></div>';
+  $('cfstay').onclick=()=>{c.innerHTML=''};
+  $('cfleave').onclick=()=>{c.innerHTML='';discard();go()};
+  if(pf)$('cfsave').onclick=()=>{c.innerHTML='';if(saveProfile($('pform')))go()};
+  $('cfstay').focus();
+}
+addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue=''}});
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&$('confirm').innerHTML){$('confirm').innerHTML='';return}
   if(e.key==='Escape'){const z=document.querySelector('.lb2');if(z){z.remove();return}if(openDD){const id=openDD;openDD=null;ddAll();$(id).querySelector('.ddb').focus();return}if(openT){openT=null;renderModal()}}
   if(openDD&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();const bs=[...$(openDD).querySelectorAll('.ddm button')];const i=bs.indexOf(document.activeElement);const n=bs[(i+(e.key==='ArrowDown'?1:-1)+bs.length)%bs.length];n&&n.focus()}
 });
-function rerenderProf(){const el=tab==='profil'?$('pform'):$('oform');if(el)paintProf(el,el.id==='oform')}
-document.addEventListener('input',e=>{if(e.target.id==='ppseudo'&&prof){prof.pseudo=e.target.value;const p=e.target.closest('form').querySelector('#pprev');if(p)p.textContent=e.target.value.trim()||'Ton pseudo'}});
+function rerenderProf(){const el=$('oform')||(tab==='profil'?$('pform'):null);if(el)paintProf(el,el.id==='oform')}
+document.addEventListener('input',e=>{if(!prof)return;
+  if(e.target.id==='ppseudo'){prof.pseudo=e.target.value;const p=e.target.closest('form').querySelector('#pprev');if(p)p.textContent=e.target.value.trim()||'Ton pseudo';updDirty()}
+  if(e.target.id==='pvol'){prof.volume=+e.target.value;$('pvolv').textContent=prof.volume+' %';mus.vol=prof.volume/100;applyVol();updDirty()}});
 document.addEventListener('change',async e=>{
+  if(e.target.id==='pmusic'){const f=e.target.files[0];e.target.value='';if(!f)return;
+    if(!/^audio\//.test(f.type)&&!/\.(mp3|ogg|wav|m4a|aac|flac|opus|webm)$/i.test(f.name)){toast('Choisis un fichier audio (mp3, ogg, wav…).');return}
+    const p=prep([f])[0];if(!p)return;busy='music';rerenderProf();
+    try{const r=await upload(p);const {data}=await sb.storage.from(BUCKET).createSignedUrl(r.path,6*3600);if(data)URLS[r.path]=data.signedUrl;
+      prof.music=r.path;prof.music_name=f.name.replace(/\.[^.]+$/,'').slice(0,80);setMusic(r.path,URLS[r.path],prof.music_name);toast('Musique prête : enregistre pour la garder.')}
+    catch(err){toast(frErr(err))}finally{busy=false;rerenderProf()}
+    return}
   if(e.target.id!=='pphoto')return;const f=e.target.files[0];e.target.value='';if(!f)return;
   if(!/^image\//.test(f.type)){toast('Choisis une image.');return}
-  const p=prep([f])[0];if(!p)return;busy=true;rerenderProf();
+  const p=prep([f])[0];if(!p)return;busy='photo';rerenderProf();
   try{const r=await upload(p);const {data}=await sb.storage.from(BUCKET).createSignedUrl(r.path,6*3600);if(data)URLS[r.path]=data.signedUrl;prof.photo=r.path}
   catch(err){toast(frErr(err))}finally{busy=false;rerenderProf()}
 });
-document.addEventListener('submit',e=>{
-  const f=e.target;if(f.id!=='pform'&&f.id!=='oform')return;e.preventDefault();
-  const pseudo=(prof.pseudo||'').trim().slice(0,30);if(!pseudo){f.querySelector('#ppseudo').focus();toast('Choisis un pseudo.');return}
-  const old=PR[me]||{},row={id:me,pseudo,icon:prof.icon,color:prof.color,photo:prof.photo||''};
+function saveProfile(f){
+  if(!prof||busy)return false;
+  const pseudo=(prof.pseudo||'').trim().slice(0,30);if(!pseudo){const i=f.querySelector('#ppseudo');i&&i.focus();toast('Choisis un pseudo.');return false}
+  const full=f.id==='pform',old={...(PR[me]||{})},row={id:me,pseudo,icon:prof.icon,color:prof.color,photo:prof.photo||''};
+  if(full){row.music=prof.music||'';row.music_name=prof.music_name||'';row.volume=Math.max(0,Math.min(100,Math.round(prof.volume)))}
   PR[me]={...old,...row};prof=null;
   if(f.id==='oform')$('modal').innerHTML='';
-  if(tab==='profil')$('pform').innerHTML='';
-  run(async()=>{chk(await sb.from('profiles').upsert(row));toast('Compte enregistré');if(old.photo&&old.photo!==row.photo)await sb.storage.from(BUCKET).remove([old.photo])});
-  render();
+  if(full)$('pform').innerHTML='';
+  run(async()=>{chk(await sb.from('profiles').upsert(row));toast('Profil enregistré');
+    const gone=[];if(old.photo&&old.photo!==row.photo)gone.push(old.photo);if(full&&old.music&&old.music!==row.music)gone.push(old.music);
+    if(gone.length)await sb.storage.from(BUCKET).remove(gone)});
+  render();return true;
+}
+document.addEventListener('submit',e=>{
+  const f=e.target;if(f.id!=='pform'&&f.id!=='oform')return;e.preventDefault();saveProfile(f);
 });
 $('lform').addEventListener('submit',e=>{
   e.preventDefault();const n=$('lname').value.trim();if(!n){$('lname').focus();return}
@@ -622,6 +757,7 @@ function paintAuth(){
   $('abtn').textContent=amode==='in'?'Se connecter':'Créer mon compte';
   $('apass').autocomplete=amode==='in'?'current-password':'new-password';$('amsg').textContent=sb?'':'Le site n’est pas encore relié à Supabase : il manque les clés dans config.js.';
 }
+$('aauto').checked=autoOn();
 paintAuth();
 {const EYE='<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',EYEX=EYE+'<path d="M3 3l18 18"/>';
  const paintEye=()=>{const shown=$('apass').type==='text';$('aeye').innerHTML=sv(shown?EYEX:EYE);$('aeye').setAttribute('aria-pressed',shown);$('aeye').setAttribute('aria-label',shown?'Masquer le mot de passe':'Afficher le mot de passe')};
@@ -631,6 +767,7 @@ $('aform').addEventListener('submit',async e=>{
   const login=loginOf(pseudo);
   if(login.length<2){msg.textContent='Le pseudo doit contenir au moins 2 lettres ou chiffres.';$('apseudo').focus();return}
   const email=login+LOGIN_DOMAIN;
+  try{localStorage.setItem(AUTO_KEY,$('aauto').checked?'1':'0')}catch(e){}
   $('abtn').disabled=true;msg.textContent='';
   try{
     if(amode==='in'){chk(await sb.auth.signInWithPassword({email,password}))}
@@ -640,14 +777,15 @@ $('aform').addEventListener('submit',async e=>{
 });
 function onSession(s){
   const was=me;session=s;me=s?s.user.id:null;
-  if(!s){loaded=false;LISTS=[];TASKS=[];for(const k in PR)delete PR[k];if(chan){sb.removeChannel(chan);chan=null}setTab('auth');return}
+  if(!s){loaded=false;LISTS=[];TASKS=[];prof=null;for(const k in PR)delete PR[k];if(chan){sb.removeChannel(chan);chan=null}stopMusic();mus.key='';$('intro').innerHTML='';$('confirm').innerHTML='';setTab('auth');return}
   if(was===me)return;
   loaded=false;later=false;
   if(!chan)chan=sb.channel('forge').on('postgres_changes',{event:'*',schema:'public',table:'tasks'},reload).on('postgres_changes',{event:'*',schema:'public',table:'lists'},reload).on('postgres_changes',{event:'*',schema:'public',table:'profiles'},reload).subscribe();
-  setTab(location.hash.slice(1));$('status').textContent='Chargement…';
+  setTab(location.hash.slice(1));$('status').textContent='';
+  playIntro(()=>tryPlay());
   loadAll().catch(e=>{$('status').textContent='Impossible de charger les données : '+frErr(e)});
 }
-addEventListener('hashchange',()=>{if(session)setTab(location.hash.slice(1))});
+addEventListener('hashchange',()=>{if(!session)return;const t=location.hash.slice(1);if(t===tab)return;if(isDirty()){history.replaceState(null,'','#'+tab);guard(()=>{location.hash=t;setTab(t)})}else setTab(t)});
 if(!sb){$('amsg').textContent=window.supabase?'Le site n’est pas encore configuré : remplis config.js (voir README).':'Impossible de charger Supabase. Vérifie ta connexion.';$('abtn').disabled=true;render()}
 else{sb.auth.getSession().then(({data})=>onSession(data.session));sb.auth.onAuthStateChange((_e,s)=>onSession(s))}
 }
