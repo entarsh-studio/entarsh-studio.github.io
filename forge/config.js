@@ -3,5 +3,5 @@
 // La clé "anon public" peut être publique : la sécurité est assurée par supabase.sql.
 window.FORGE_CONFIG = {
   url: "https://nipojbslomagcjpvosnk.supabase.co",
-  anonKey: "COLLE-ICI-LA-CLE-ANON-PUBLIC"
+  anonKey: "sb_publishable_e1s4ftSwoxQBbDCBsJqW_g_-CSRha1K"
 };
