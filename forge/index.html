@@ -146,7 +146,6 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
   .ov{padding:0}.modal{max-height:100%;height:100%;border-radius:0;align-content:start}
   .toast{bottom:84px}
 }
-@media(max-width:700px),(pointer:coarse){#musb{display:none}}
 @media(prefers-reduced-motion:reduce){.ddb .chev{transition:none}}
 [hidden]{display:none!important}
 .out .in-only{display:none!important}
@@ -313,7 +312,8 @@ $('musf').addEventListener('change',e=>{
     if(!eq.audio){eq.audio=new Audio();eq.audio.loop=true;
       eq.audio.addEventListener('play',()=>{paintMus();eq.start()});eq.audio.addEventListener('pause',paintMus);
       const C=window.AudioContext||window.webkitAudioContext;
-      if(C){eq.ctx=new C();const src=eq.ctx.createMediaElementSource(eq.audio);eq.an=eq.ctx.createAnalyser();eq.an.fftSize=256;eq.an.smoothingTimeConstant=0.75;eq.buf=new Uint8Array(eq.an.frequencyBinCount);src.connect(eq.an);eq.an.connect(eq.ctx.destination)}}
+      if(C){eq.ctx=new C();const src=eq.ctx.createMediaElementSource(eq.audio);eq.an=eq.ctx.createAnalyser();eq.an.fftSize=256;eq.an.smoothingTimeConstant=0.75;eq.buf=new Uint8Array(eq.an.frequencyBinCount);eq.gain=eq.ctx.createGain();src.connect(eq.an);eq.an.connect(eq.gain);eq.gain.connect(eq.ctx.destination);
+        const mq=matchMedia('(max-width:700px),(pointer:coarse)'),setVol=()=>{eq.gain.gain.value=mq.matches?0:1};setVol();mq.addEventListener('change',setVol)}}
     if(eq.url)URL.revokeObjectURL(eq.url);
     eq.url=URL.createObjectURL(f);eq.audio.src=eq.url;eq.name=f.name.replace(/\.[^.]+$/,'');
     eq.ctx&&eq.ctx.resume();eq.audio.play().catch(()=>toast('Appuie sur le bouton lecture pour lancer la musique.'));paintMus();
