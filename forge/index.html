@@ -146,6 +146,7 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
   .ov{padding:0}.modal{max-height:100%;height:100%;border-radius:0;align-content:start}
   .toast{bottom:84px}
 }
+@media(max-width:700px),(pointer:coarse){#musb{display:none}}
 @media(prefers-reduced-motion:reduce){.ddb .chev{transition:none}}
 [hidden]{display:none!important}
 .out .in-only{display:none!important}
@@ -333,7 +334,8 @@ const frErr=e=>{const m=(e&&(e.message||e.error_description))||'';
   if(/email.*invalid|invalid.*email/i.test(m))return 'Ce pseudo ne peut pas servir d’identifiant, essaies-en un autre.';
   if(/Password should be/i.test(m))return 'Le mot de passe doit faire au moins 6 caractères.';
   if(/rate limit|too many/i.test(m))return 'Trop d’essais, attends quelques minutes.';
-  if(/row-level security|permission|Seule la personne/i.test(m))return m.includes('Seule')?'Seule la personne concernée peut cocher cette tâche.':'Action non autorisée.';
+  if(/Seule la personne/i.test(m))return 'Seule la personne concernée peut cocher cette tâche.';
+  if(/row-level security|permission/i.test(m))return 'Action non autorisée ('+m+').';
   if(/exceeded the maximum allowed size|Payload too large/i.test(m))return 'Fichier trop lourd (50 Mo maximum).';
   if(/Failed to fetch|NetworkError/i.test(m))return 'Pas de connexion au serveur.';
   return m||'Une erreur est survenue, réessaie.'};

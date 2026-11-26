@@ -35,6 +35,10 @@ create table if not exists public.tasks (
   created_at  timestamptz not null default now()
 );
 
+-- ---------- Accès des personnes connectées aux tables ----------
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.profiles, public.lists, public.tasks to authenticated;
+
 -- ---------- Sécurité : seules les personnes connectées voient les données ----------
 alter table public.profiles enable row level security;
 alter table public.lists    enable row level security;
