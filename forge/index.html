@@ -150,8 +150,15 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
 .intro{position:fixed;inset:0;z-index:60;background:#0b0b0d;display:grid;place-items:center;transition:opacity .5s;cursor:pointer;overflow:hidden}
 .intro.out{opacity:0;pointer-events:none}
 .st{grid-area:1/1;display:grid;justify-items:center;gap:22px;text-align:center}
-.st1{animation:stout .55s 2.9s ease forwards}
-.ent{width:min(52vw,250px);height:auto;overflow:visible;animation:glow 1.1s 1.25s ease forwards}
+.st1{animation:stout .55s 3.4s ease forwards;display:flex;align-items:center;gap:0}
+.ename{overflow:hidden;max-width:0;white-space:nowrap;animation:ename .9s 1.3s cubic-bezier(.25,.8,.25,1) forwards;text-align:left}
+.ename b,.ename span{display:block;padding-left:28px;opacity:0;transform:translateX(-36px);animation:enamet .7s ease forwards}
+.ename b{font:700 clamp(30px,6.5vw,60px)/1 'Chakra Petch',Inter,sans-serif;letter-spacing:.06em;color:#fff;animation-delay:1.45s}
+.ename span{font:600 clamp(14px,2.8vw,24px)/1 'Chakra Petch',Inter,sans-serif;letter-spacing:.38em;color:#ffae00;margin-top:10px;animation-delay:1.65s}
+.ename sup{font-size:1em;font-weight:700;letter-spacing:0;margin-left:-.2em;color:#fff;position:relative;top:-.45em;vertical-align:baseline}
+@keyframes ename{to{max-width:520px}}
+@keyframes enamet{to{opacity:1;transform:none}}
+.ent{width:clamp(96px,22vw,190px);flex:none;height:auto;overflow:visible;animation:glow 1.1s 1.25s ease forwards}
 .ent .ring,.ent .glyph,.ent .halo{transform-box:view-box;transform-origin:128px 128px;opacity:0}
 .ent .ring,.ent .glyph{fill:#ffae00}
 .ent .ring{animation:entring 1s .15s cubic-bezier(.2,.9,.25,1.12) forwards}
@@ -163,13 +170,13 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
 @keyframes entglyph{0%{opacity:0;transform:scale(1.8)}100%{opacity:1;transform:none}}
 @keyframes enthalo{0%{opacity:.85;transform:scale(.45)}100%{opacity:0;transform:scale(1.4)}}
 @keyframes entshine{to{transform:translateX(460px) skewX(-20deg)}}
-.st2{opacity:0;animation:fadein .01s 3.25s forwards}
+.st2{opacity:0;animation:fadein .01s 3.75s forwards}
 .flg{width:min(30vw,124px);height:auto;overflow:visible}
-.flg rect{transform-box:fill-box;transform-origin:center;transform:scale(0) rotate(-12deg);animation:pop .55s 3.3s cubic-bezier(.3,1.5,.5,1) forwards}
-.flg .k2{fill:none;stroke:#fff;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:draw .55s 3.7s ease forwards}
-.flg .c{stroke-width:2.6;animation-delay:4.05s}
-.ft{font-size:52px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1;opacity:0;transform:translateY(12px);animation:rise .5s 4.15s ease forwards}
-.fs{color:#a4a9b4;font-size:16px;font-weight:600;opacity:0;animation:rise .5s 4.4s ease forwards;margin-top:-10px}
+.flg rect{transform-box:fill-box;transform-origin:center;transform:scale(0) rotate(-12deg);animation:pop .55s 3.8s cubic-bezier(.3,1.5,.5,1) forwards}
+.flg .k2{fill:none;stroke:#fff;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:draw .55s 4.2s ease forwards}
+.flg .c{stroke-width:2.6;animation-delay:4.55s}
+.ft{font-size:52px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1;opacity:0;transform:translateY(12px);animation:rise .5s 4.65s ease forwards}
+.fs{color:#a4a9b4;font-size:16px;font-weight:600;opacity:0;animation:rise .5s 4.9s ease forwards;margin-top:-10px}
 .skip{position:absolute;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));border:1px solid #2c3039;background:#17191e;border-radius:99px;min-height:40px;padding:4px 16px;font-weight:600;color:#a4a9b4}
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes glow{to{filter:drop-shadow(0 0 22px rgba(255,174,0,.5))}}
@@ -449,8 +456,10 @@ body.out .shell{grid-template-columns:minmax(0,1fr)}
 .vu{display:flex;gap:2px}
 .vu i{flex:1;height:5px;border-radius:1px;background:#24272e}
 .vu i.on{background:#3ecf8e;box-shadow:0 0 5px #3ecf8e66}.vu i.on.a{background:#f5b942;box-shadow:0 0 5px #f5b94266}.vu i.on.r{background:#ff3b3b;box-shadow:0 0 5px #ff3b3b66}
-.cre{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:32px;width:32px;padding:0;display:grid;place-items:center}
+.cre,.cre:active{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:32px;width:32px;padding:0;display:grid;place-items:center}
 .cre svg.i{width:15px;height:15px}
+.crate .cre:active,.crate .cre:hover{transform:translateY(-50%)}
+.crate .cre:active{transform:translateY(calc(-50% + 1px))}
 /* barre du bas (téléphone) */
 .mbar{display:none}
 /* panneaux façon matériel */
@@ -964,12 +973,13 @@ const eq={cv:$('eq'),bars:[],an:null,buf:null,audio:null,ctx:null};
     const t=ts/1000,bw=W<700?6:9,gap=W<700?4:6,n=Math.ceil(W/(bw+gap)),maxH=H*0.55;
     if(perm.length!==n)shuffle(n);
     let data=null;if(eq.an&&eq.audio&&!eq.audio.paused){eq.an.getByteFrequencyData(eq.buf);data=eq.buf}
+    const fk=Math.min(1,(performance.now()-(eq.t0||0))/1800),fade=fk*fk*(3-2*fk);
     const beat=Math.exp(-((t*2.05)%1)*6),beat2=Math.exp(-((t*2.05+0.5)%1)*9)*0.5;
     g.clearRect(0,0,W,H);
     for(let i=0;i<n;i++){
       let v;
       const pi=perm[i];
-      if(data){const bin=Math.min(data.length-1,Math.floor(Math.pow(pi/n,1.7)*data.length*0.85));v=data[bin]/255;v=v*v*1.15}
+      if(data){const bin=Math.min(data.length-1,Math.floor(Math.pow(pi/n,1.7)*data.length*0.85));v=data[bin]/255;v=v*v*1.15*fade}
       else v=0;
       const prev=eq.bars[i]||0,nv=v>prev?v:prev*0.9+v*0.1;eq.bars[i]=nv;
       const h=Math.max(3,nv*maxH),x=i*(bw+gap),y=H-h;
@@ -990,11 +1000,13 @@ function applyVol(){if(!eq.audio)return;if(eq.gain){eq.gain.gain.value=PHONE.mat
 function ensureAudio(){
   if(eq.audio)return;
   eq.audio=new Audio();eq.audio.loop=true;eq.audio.crossOrigin='anonymous';eq.audio.preload='auto';
-  eq.audio.addEventListener('play',()=>{paintMus();eq.start()});eq.audio.addEventListener('pause',paintMus);
+  eq.audio.addEventListener('play',()=>{eq.t0=performance.now();fadeIn();paintMus();eq.start()});eq.audio.addEventListener('pause',paintMus);
   const C=window.AudioContext||window.webkitAudioContext;
   if(C){try{eq.ctx=new C();const src=eq.ctx.createMediaElementSource(eq.audio);eq.an=eq.ctx.createAnalyser();eq.an.fftSize=256;eq.an.smoothingTimeConstant=0.75;eq.buf=new Uint8Array(eq.an.frequencyBinCount);eq.gain=eq.ctx.createGain();src.connect(eq.an);eq.an.connect(eq.gain);eq.gain.connect(eq.ctx.destination)}catch(e){eq.ctx=null;eq.gain=null}}
   applyVol();PHONE.addEventListener('change',applyVol);
 }
+function fadeIn(){if(!eq.gain||!eq.ctx)return;const g=eq.gain.gain,t=eq.ctx.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(0,t);g.linearRampToValueAtTime(PHONE.matches?0:mus.vol,t+1.8)}
+function fadeOutPause(){if(!eq.audio)return;if(!eq.gain||!eq.ctx){eq.audio.pause();return}const g=eq.gain.gain,t=eq.ctx.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(0,t+.35);clearTimeout(fadeOutPause.h);fadeOutPause.h=setTimeout(()=>{if(!mus.want)eq.audio.pause()},360)}
 function setMusic(key,src,name){ensureAudio();mus.name=name;paintMus();if(mus.key===key)return;mus.key=key;eq.audio.src=src;if(mus.want)tryPlay()}
 let unlock=null;
 function tryPlay(){
@@ -1012,7 +1024,7 @@ const paintMus=()=>{const a=eq.audio,b=$('musb'),on=!!(a&&!a.paused);
   b.innerHTML='<span class="pp">'+sv(on?P.pause:P.play)+'</span><span class="dlcd"><span class="eqm" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="tn"></span></span>';b.querySelector('.tn').textContent=mus.name||'Musique';
   b.classList.toggle('on',on);b.title=on?'Mettre la musique en pause':'Lancer la musique'};
 paintMus();
-$('musb').addEventListener('click',()=>{if(!eq.audio)return;if(eq.audio.paused){eq.ctx&&eq.ctx.resume();mus.want=true;eq.audio.play().catch(()=>toast('Impossible de lire la musique.'))}else{mus.want=false;eq.audio.pause()}});
+$('musb').addEventListener('click',()=>{if(!eq.audio)return;if(eq.audio.paused){eq.ctx&&eq.ctx.resume();mus.want=true;eq.audio.play().catch(()=>toast('Impossible de lire la musique.'))}else{mus.want=false;fadeOutPause()}});
 function musicOf(p){p=p||{};if(p.music&&URLS[p.music])return [p.music,URLS[p.music],p.music_name||'Ma musique'];return [DEFAULT_MUSIC[0],DEFAULT_MUSIC[0],DEFAULT_MUSIC[1]]}
 function applyProfileMusic(){const p=PR[me]||{};mus.vol=(Number.isFinite(p.volume)?p.volume:70)/100;const [k,u,n]=musicOf(p);setMusic(k,u,n);applyVol()}
 
@@ -1022,11 +1034,11 @@ function playIntro(done){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches){done();return}
   const el=$('intro');
   el.innerHTML='<div class="intro" aria-hidden="true"><div class="st st1"><svg class="ent" viewBox="0 0 256 256"><defs><clipPath id="entc"><path clip-rule="evenodd" d="'+ENT.map(x=>x[0]).join(' ')+'"/></clipPath><linearGradient id="entg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>'+
-   '<circle class="halo" cx="128" cy="128" r="112"/><circle class="halo h2" cx="128" cy="128" r="112"/><path class="ring" fill-rule="evenodd" d="'+ENT.slice(0,8).map(x=>x[0]).join(' ')+'"/><path class="glyph" fill-rule="evenodd" d="'+ENT.slice(8).map(x=>x[0]).join(' ')+'"/><g clip-path="url(#entc)"><rect class="shine" x="-140" y="-40" width="90" height="340" fill="url(#entg)"/></g></svg></div>'+
+   '<circle class="halo" cx="128" cy="128" r="112"/><circle class="halo h2" cx="128" cy="128" r="112"/><path class="ring" fill-rule="evenodd" d="'+ENT.slice(0,8).map(x=>x[0]).join(' ')+'"/><path class="glyph" fill-rule="evenodd" d="'+ENT.slice(8).map(x=>x[0]).join(' ')+'"/><g clip-path="url(#entc)"><rect class="shine" x="-140" y="-40" width="90" height="340" fill="url(#entg)"/></g></svg><div class="ename"><b>ENTARSH</b><span>STUDIO<sup>™</sup></span></div></div>'+
    '<div class="st st2"><svg class="flg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#ff4d4d"/><path class="k2" d="M16 5l9 5v12l-9 5-9-5V10z" pathLength="1"/><path class="k2 c" d="M11.5 16.5l3 3 6-6.5" pathLength="1"/></svg><b class="ft">Forge</b><span class="fs">Les tâches de l’équipe</span></div>'+
    '<button type="button" class="skip">Passer</button></div>';
   let fin=false;const end=()=>{if(fin)return;fin=true;const o=el.firstChild;if(o)o.classList.add('out');setTimeout(()=>{if(fin)el.innerHTML=''},520);done()};
-  el.firstChild.addEventListener('click',end);setTimeout(end,5400);
+  el.firstChild.addEventListener('click',end);setTimeout(end,5900);
 }
 const LOADER=(t)=>'<div class="loader"><svg viewBox="0 0 32 32" aria-hidden="true"><path class="k" d="M16 3l11 6.3v13.4L16 29 5 22.7V9.3z" pathLength="1"/><path class="k c" d="M11 16.5l3.5 3.5 6.5-7" pathLength="1"/></svg><div class="eqb"><i></i><i></i><i></i><i></i><i></i></div><span>'+(t||'Allumage de la forge…')+'</span></div>';
 
@@ -1327,7 +1339,7 @@ function nameDlg(title,val,ok,fn){
 
 function cropDlg(src){return new Promise(done=>{
   const host=document.createElement('div');document.body.appendChild(host);
-  host.innerHTML='<div class="ov"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="cpt" style="width:min(480px,100%)"><h3 id="cpt">Ajuster l’image</h3><p class="sub" style="display:block;margin:0">Glisse l’image pour la placer, règle la taille avec le zoom (ou la molette). Le cercle montre ce qui apparaîtra dans la pastille.</p><div class="crop"><canvas width="560" height="560" aria-label="Zone de recadrage"></canvas></div><label class="f">Taille<div class="vol"><input type="range" min="1" max="5" step="any" value="1" aria-label="Zoom"><b>100 %</b></div></label><div class="cropb"><button type="button" class="ghost" data-k="fit">Image entière</button><button type="button" class="ghost" data-k="fill">Remplir le cercle</button></div><div class="acts" style="justify-content:flex-end;flex-wrap:wrap"><button type="button" class="ghost" data-k="no">Annuler</button><button type="button" class="btn" data-k="ok">Utiliser cette image</button></div></div></div>';
+  host.innerHTML='<div class="ov" style="z-index:55"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="cpt" style="width:min(480px,100%)"><h3 id="cpt">Ajuster l’image</h3><p class="sub" style="display:block;margin:0">Glisse l’image pour la placer, règle la taille avec le zoom (ou la molette). Le cercle montre ce qui apparaîtra dans la pastille.</p><div class="crop"><canvas width="560" height="560" aria-label="Zone de recadrage"></canvas></div><label class="f">Taille<div class="vol"><input type="range" min="1" max="5" step="any" value="1" aria-label="Zoom"><b>100 %</b></div></label><div class="cropb"><button type="button" class="ghost" data-k="fit">Image entière</button><button type="button" class="ghost" data-k="fill">Remplir le cercle</button></div><div class="acts" style="justify-content:flex-end;flex-wrap:wrap"><button type="button" class="ghost" data-k="no">Annuler</button><button type="button" class="btn" data-k="ok">Utiliser cette image</button></div></div></div>';
   const S=560,cv=host.querySelector('canvas'),g=cv.getContext('2d'),zr=host.querySelector('input'),zv=host.querySelector('.vol b'),img=new Image();
   let base=1,z=1,ox=0,oy=0,ready=false,minZ=1;
   const fin=b=>{host.remove();removeEventListener('keydown',key,true);done(b)};
