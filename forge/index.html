@@ -190,13 +190,19 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
 @keyframes feq{0%{transform:scaleY(0)}40%{transform:scaleY(var(--h))}70%{transform:scaleY(calc(var(--h)*.4))}100%{transform:scaleY(var(--e))}}
 @keyframes fsub{0%{opacity:0;letter-spacing:.9em}100%{opacity:1;letter-spacing:.32em}}
 .gate{display:grid;place-items:center;align-content:center;gap:18px;cursor:pointer;background:radial-gradient(600px 400px at 50% 50%,#1a0f12 0,#0b0b0d 70%)}
-.gpad{width:104px;height:104px;border-radius:50%;border:2px solid #ff3b3b;background:radial-gradient(circle at 50% 35%,#3a1416,#140809);display:grid;place-items:center;color:#ff5a5a;cursor:pointer;animation:gpulse 1.6s ease-in-out infinite}
+.gpad{width:104px;height:104px;border-radius:50%;border:2px solid #ff3b3b;background:radial-gradient(circle at 50% 35%,#3a1416,#140809);display:grid;place-items:center;color:#ff5a5a;cursor:pointer;opacity:0;transform:scale(.4);animation:gin .7s .15s cubic-bezier(.2,.9,.3,1.3) forwards,gpulse 1.6s 1s ease-in-out infinite}
+.gpad svg path{stroke-dasharray:1;stroke-dashoffset:1;animation:gdraw .6s .55s ease forwards}
+.gpad svg path+path{animation-delay:.7s}
+.glab{opacity:0;animation:grise .7s .75s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes gin{to{opacity:1;transform:none}}
+@keyframes gdraw{to{stroke-dashoffset:0}}
+@keyframes grise{0%{opacity:0;letter-spacing:.6em}100%{opacity:1;letter-spacing:.2em}}
 .gpad svg{width:46px;height:46px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 .gpad:hover{color:#fff;background:radial-gradient(circle at 50% 35%,#ff5a5a,#c41f1f)}
-.glab{font:700 clamp(18px,3vw,24px) 'Chakra Petch',Inter,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#fff}
+.glab{white-space:nowrap;font:700 clamp(18px,3vw,24px) 'Chakra Petch',Inter,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#fff}
 .gsub{font:600 13px 'Chakra Petch',Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#7d838e;margin-top:-8px}
 @keyframes gpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,59,.5),0 0 24px rgba(255,59,59,.35)}50%{box-shadow:0 0 0 18px rgba(255,59,59,0),0 0 40px rgba(255,59,59,.55)}}
-@media(prefers-reduced-motion:reduce){.gpad{animation:none}}
+@media(prefers-reduced-motion:reduce){.gpad,.glab,.gpad svg path{animation:none;opacity:1;transform:none;stroke-dashoffset:0}}
 .skip{position:absolute;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));border:1px solid #2c3039;background:#17191e;border-radius:99px;min-height:40px;padding:4px 16px;font-weight:600;color:#a4a9b4}
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes glow{to{filter:drop-shadow(0 0 22px rgba(255,174,0,.5))}}
@@ -1058,7 +1064,7 @@ function startIntro(){
   const early=musStart()==='debut',go=()=>{if(early)tryPlay();playIntro(()=>{if(!early)tryPlay()})};
   const ua=navigator.userActivation;if(!ua||ua.hasBeenActive){go();return}
   const el=$('intro');
-  el.innerHTML='<div class="intro gate" role="dialog" aria-label="Démarrer Forge"><button type="button" class="gpad" aria-label="Démarrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></button><b class="glab">Appuie pour démarrer</b><span class="gsub">'+(early?'Le son démarre avec l’intro':'Le son démarre après l’intro')+'</span></div>';
+  el.innerHTML='<div class="intro gate" role="dialog" aria-label="Démarrer Forge"><button type="button" class="gpad" aria-label="Démarrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8" pathLength="1"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0" pathLength="1"/></svg></button><b class="glab">Appuie pour démarrer</b></div>';
   let done=false;const fire=e=>{if(done)return;done=true;if(e&&e.preventDefault)e.preventDefault();removeEventListener('keydown',kf,true);ensureAudio();eq.ctx&&eq.ctx.resume();el.innerHTML='';go()};
   const kf=e=>{if(e.key==='Enter'||e.key===' '){fire(e)}};
   el.firstChild.addEventListener('click',fire);addEventListener('keydown',kf,true);el.querySelector('.gpad').focus();
