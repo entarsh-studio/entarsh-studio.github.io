@@ -13,6 +13,8 @@ create table if not exists public.categories (
   created_at  timestamptz not null default now()
 );
 
+alter table public.categories add column if not exists image text not null default '';
+
 -- Les listes et les tâches sont rangées dans une catégorie (vide = « Général »).
 -- Une catégorie qui contient encore quelque chose ne peut pas être supprimée.
 alter table public.lists add column if not exists category_id uuid references public.categories on delete restrict;

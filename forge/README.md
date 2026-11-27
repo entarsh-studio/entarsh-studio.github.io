@@ -47,10 +47,12 @@ Pour ajouter quelqu'un plus tard : rouvre-les quelques minutes, ou utilise **Aut
 
 Si ton projet Supabase existait déjà avant cette mise à jour, lance **une seule fois** le fichier `maj-categories-cloud.sql` dans **SQL Editor** → **New query** → **Run**.
 (Pour un projet tout neuf, `supabase.sql` contient déjà tout.)
+Si tu l'avais déjà lancé avant l'ajout des images de catégorie, lance aussi :
+`alter table public.categories add column if not exists image text not null default '';`
 
 - **Catégories** : en haut des onglets Tâches, Créer, Listes et Cloud. Chaque catégorie (ex. *Helper*) a ses propres listes, tâches et son propre cloud. « Général » regroupe tout ce qui a été créé sans catégorie.
   Seul le créateur d'une catégorie peut la modifier ou la supprimer, et seulement quand elle est vide.
-- **Cloud** : dossiers et fichiers (50 Mo maximum par fichier). Glisse des fichiers dans la page, colle une capture (Ctrl+V) ou clique sur *Importer*.
+- **Cloud** : dossiers et fichiers façon Explorateur (arborescence, vue liste ou grandes icônes). Les gros fichiers (modèles Blender, textures, animations) sont découpés automatiquement en morceaux de 45 Mo à l'envoi et recollés au téléchargement, jusqu'à 2 Go par fichier. Glisse des fichiers dans la page, colle une capture (Ctrl+V) ou clique sur *Importer*.
   Tout le monde voit, ouvre et télécharge tout ; seul l'auteur d'un fichier ou d'un dossier peut le renommer, le déplacer ou le supprimer.
   L'offre gratuite de Supabase donne 1 Go de stockage au total (pièces jointes + cloud).
 
