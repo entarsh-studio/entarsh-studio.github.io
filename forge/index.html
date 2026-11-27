@@ -189,6 +189,14 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
 @keyframes fled{0%{opacity:0;text-shadow:none}25%{opacity:1;text-shadow:0 0 18px #ff3b3b}35%{opacity:.15}50%{opacity:1;text-shadow:0 0 22px #ff3b3b}100%{opacity:1;text-shadow:0 0 10px rgba(255,59,59,.55)}}
 @keyframes feq{0%{transform:scaleY(0)}40%{transform:scaleY(var(--h))}70%{transform:scaleY(calc(var(--h)*.4))}100%{transform:scaleY(var(--e))}}
 @keyframes fsub{0%{opacity:0;letter-spacing:.9em}100%{opacity:1;letter-spacing:.32em}}
+.gate{display:grid;place-items:center;align-content:center;gap:18px;cursor:pointer;background:radial-gradient(600px 400px at 50% 50%,#1a0f12 0,#0b0b0d 70%)}
+.gpad{width:104px;height:104px;border-radius:50%;border:2px solid #ff3b3b;background:radial-gradient(circle at 50% 35%,#3a1416,#140809);display:grid;place-items:center;color:#ff5a5a;cursor:pointer;animation:gpulse 1.6s ease-in-out infinite}
+.gpad svg{width:46px;height:46px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.gpad:hover{color:#fff;background:radial-gradient(circle at 50% 35%,#ff5a5a,#c41f1f)}
+.glab{font:700 clamp(18px,3vw,24px) 'Chakra Petch',Inter,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#fff}
+.gsub{font:600 13px 'Chakra Petch',Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#7d838e;margin-top:-8px}
+@keyframes gpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,59,.5),0 0 24px rgba(255,59,59,.35)}50%{box-shadow:0 0 0 18px rgba(255,59,59,0),0 0 40px rgba(255,59,59,.55)}}
+@media(prefers-reduced-motion:reduce){.gpad{animation:none}}
 .skip{position:absolute;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));border:1px solid #2c3039;background:#17191e;border-radius:99px;min-height:40px;padding:4px 16px;font-weight:600;color:#a4a9b4}
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes glow{to{filter:drop-shadow(0 0 22px rgba(255,174,0,.5))}}
@@ -1044,6 +1052,17 @@ function applyProfileMusic(){const p=PR[me]||{};mus.vol=(Number.isFinite(p.volum
 
 /* ---------- animation d'ouverture ---------- */
 const ENT=[["M70.2 27.0L69.0 28.2L63.0 39.2L12.0 127.2L12.0 128.5L70.0 228.5L186.0 228.5L244.2 128.2L244.2 127.5L187.5 29.0L185.8 27.0Z", 0.1], ["M127.8 42.2L130.0 43.0L201.0 84.0L202.5 85.5L202.5 170.5L200.8 172.0L128.2 213.8L55.5 172.0L53.5 170.0L53.8 85.2L59.0 81.8Z", 0.35], ["M58.8 185.2L60.0 184.8L112.2 214.8L113.0 216.2L112.5 216.8L77.2 216.5L75.0 213.5Z", 0.6], ["M197.2 185.2L179.2 216.2L144.2 216.8L143.0 216.2L144.0 214.8L193.8 186.5L196.0 184.8Z", 0.67], ["M43.8 97.0L44.8 97.5L44.8 158.5L44.2 159.0L42.8 157.8L26.0 128.5L26.0 127.2Z", 0.74], ["M212.0 97.2L213.0 97.8L230.2 127.8L212.5 158.8L211.5 158.2L211.5 98.0Z", 0.81], ["M112.5 39.8L111.8 41.0L60.5 70.5L59.5 70.8L59.0 70.2L75.8 41.2L77.2 39.5L112.0 39.2Z", 0.88], ["M143.8 39.8L144.2 39.2L178.2 39.2L179.2 39.8L197.0 70.2L196.2 70.8L144.5 41.0Z", 0.95], ["M95.5 71.2L89.2 74.2L82.8 79.2L77.2 85.8L73.2 93.5L71.0 100.8L69.8 110.2L70.0 120.2L72.2 130.8L74.0 135.2L78.2 142.8L81.2 146.5L88.0 152.5L92.8 155.5L99.5 158.5L108.0 160.8L115.2 161.5L117.0 162.5L117.2 194.8L139.2 194.8L139.5 162.2L140.8 161.5L142.8 161.5L152.2 159.5L159.8 156.8L165.8 153.5L170.8 149.8L174.5 146.2L177.8 142.2L181.5 136.0L184.5 128.0L186.5 116.5L186.5 108.0L185.8 102.0L184.5 96.8L180.5 87.5L175.8 81.0L170.2 76.0L163.5 72.0L155.2 69.2L148.0 68.2L141.5 68.2L135.8 69.0L131.2 70.2L127.5 72.0L124.5 74.2L122.2 76.8L120.0 80.5L118.0 86.2L117.0 92.0L116.8 96.8L117.0 142.2L116.2 143.0L114.8 143.0L111.0 142.0L106.2 139.8L102.5 137.0L99.2 133.5L96.8 129.8L94.8 125.2L93.8 121.5L93.2 117.2L93.2 110.0L93.8 104.8L94.8 100.2L98.0 93.5L100.5 90.8L103.2 88.8L106.2 87.5L109.0 87.0L109.5 86.5L111.5 68.8L111.0 68.2L103.8 69.0Z", 1.0], ["M146.8 87.0L150.5 88.0L153.5 89.8L156.2 92.2L159.0 96.0L160.8 99.5L162.2 104.5L163.0 109.2L163.0 117.2L161.0 126.0L159.0 130.2L156.8 133.5L153.2 137.0L148.8 140.0L143.8 142.0L140.2 142.8L139.5 142.0L139.5 95.0L140.0 92.0L141.5 89.0L143.2 87.5Z", 1.15]];
+/* Les navigateurs bloquent le son tant qu'on n'a pas cliqué sur la page (connexion automatique) :
+   on demande ce premier clic juste avant l'intro, il débloque la musique au bon moment. */
+function startIntro(){
+  const early=musStart()==='debut',go=()=>{if(early)tryPlay();playIntro(()=>{if(!early)tryPlay()})};
+  const ua=navigator.userActivation;if(!ua||ua.hasBeenActive){go();return}
+  const el=$('intro');
+  el.innerHTML='<div class="intro gate" role="dialog" aria-label="Démarrer Forge"><button type="button" class="gpad" aria-label="Démarrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></button><b class="glab">Appuie pour démarrer</b><span class="gsub">'+(early?'Le son démarre avec l’intro':'Le son démarre après l’intro')+'</span></div>';
+  let done=false;const fire=e=>{if(done)return;done=true;if(e&&e.preventDefault)e.preventDefault();removeEventListener('keydown',kf,true);ensureAudio();eq.ctx&&eq.ctx.resume();el.innerHTML='';go()};
+  const kf=e=>{if(e.key==='Enter'||e.key===' '){fire(e)}};
+  el.firstChild.addEventListener('click',fire);addEventListener('keydown',kf,true);el.querySelector('.gpad').focus();
+}
 function playIntro(done){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches){done();return}
   const el=$('intro');
@@ -2272,8 +2291,7 @@ function onSession(s){
   loaded=false;later=false;cview=(s.user.user_metadata&&s.user.user_metadata.cloud_view)==='grid'?'grid':'list';
   if(!chan)chan=sb.channel('forge').on('postgres_changes',{event:'*',schema:'public',table:'tasks'},reload).on('postgres_changes',{event:'*',schema:'public',table:'lists'},reload).on('postgres_changes',{event:'*',schema:'public',table:'profiles'},reload).on('postgres_changes',{event:'*',schema:'public',table:'categories'},reload).on('postgres_changes',{event:'*',schema:'public',table:'cloud_items'},reload).subscribe();
   setTab(location.hash.slice(1));$('status').textContent='';
-  const early=musStart()==='debut';if(early)tryPlay();
-  playIntro(()=>{if(!early)tryPlay()});
+  startIntro();
   loadAll().catch(e=>{$('status').textContent='Impossible de charger les données : '+frErr(e)});
 }
 addEventListener('hashchange',()=>{if(!session)return;const t=location.hash.slice(1);if(t===tab)return;if(isDirty()){history.replaceState(null,'','#'+tab);guard(()=>{location.hash=t;setTab(t)})}else setTab(t)});
