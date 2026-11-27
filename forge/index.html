@@ -704,6 +704,13 @@ input::placeholder,textarea::placeholder{color:#5c616c}
 .cform textarea{min-height:46px;max-height:180px;resize:none}
 .cform .btn{flex:none;min-height:46px}
 .tsec .cform{padding:0;border:0;background:none;margin-top:10px}
+.tsec .cform.cf2{display:grid;gap:8px;border-radius:8px}
+.cform.over{outline:2px dashed var(--red);outline-offset:6px}
+.crow2{display:flex;gap:10px;align-items:flex-end}
+.cclip{min-height:46px;width:46px;flex:none;display:grid;place-items:center;padding:0;cursor:pointer}
+.cclip svg.i{width:20px;height:20px}
+.cpend{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.mfl{margin:6px 0 2px;grid-template-columns:repeat(auto-fill,minmax(120px,160px))}
 .cmts{max-height:340px;overflow:auto;margin:0 -6px}
 .cmts .msg:first-child{margin-top:0}
 /* activité */
@@ -1110,7 +1117,7 @@ const frErr=e=>{const m=(e&&(e.message||e.error_description))||'';
   return m||'Une erreur est survenue, réessaie.'};
 
 /* ---------- état ---------- */
-let editT=null,cmpBase=null,tab='taches',fstat='todo',trk='all',ticon='codage',tcolor='',tdiff=0,turg=2,armed=null,openT=null,openDD=null,busy=false,amode='in',prof=null,later=false,cmpOpen=false,pasteHook=null;
+let cpend=[],cpTask=null,cmbusy=false,msgF=true,editT=null,cmpBase=null,tab='taches',fstat='todo',trk='all',ticon='codage',tcolor='',tdiff=0,turg=2,armed=null,openT=null,openDD=null,busy=false,amode='in',prof=null,later=false,cmpOpen=false,pasteHook=null;
 const dd={tlist:{v:'',opts:[]},twho:{v:'',opts:[]}};
 let pend=[];
 
@@ -1261,6 +1268,7 @@ function renderModal(){
   }
   const t=openT&&findT(openT);
   if(!t){openT=null;box.innerHTML='';renderModal.last=null;return}
+  if(cpTask!==t.key){cpend.forEach(p=>p.local&&URL.revokeObjectURL(p.local));cpend=[];cpTask=t.key}
   const same=renderModal.last===t.key,old=$('tcin'),kv=old&&same?old.value:'',kf=!!old&&document.activeElement===old,sc=box.querySelector('.tmod'),stp=sc&&same?sc.scrollTop:0,cs=box.querySelector('.cmts'),cst=cs&&same?cs.scrollTop:null,csb=cs?cs.scrollHeight-cs.scrollTop-cs.clientHeight<40:true;
   const lists=allLists(),l=lists.find(x=>x.key===t.list),files=t.files,mine=t.uid===me,u=t.urg||3,d=t.diff||1,done=!!doneAt(t),can=canCheck(t),late=!!t.due_date&&!done&&t.due_date<todayYmd();
   const ucol=['','#ff4d4d','#f5b942','#6b7180'][u],cn=catName(t.category_id),cm=MSGS.filter(m=>m.task_id===t.id);
@@ -1278,12 +1286,13 @@ function renderModal(){
      '<section class="tsec"><h4>'+sv(P.clip)+'Pièces jointes <span class="n">'+files.length+'</span></h4>'+(files.length?'<div class="files" id="mfiles">'+fileTiles(files,mine,'data-rf')+'</div>':'<div class="sub">Aucune pièce jointe.</div>')+
        (mine?'<label class="drop" id="mdrop" style="margin-top:10px"><input type="file" id="mfile" multiple><b>'+(busy?'Envoi en cours…':'Ajouter des pièces jointes')+'</b>Clique, glisse un fichier, ou colle une capture (Ctrl+V)</label>':'')+'</section>'+
      '<section class="tsec"><h4>'+sv(CHAT)+'Commentaires <span class="n">'+cm.length+'</span></h4>'+(v3?(cm.length?'<div class="cmts">'+msgsHTML(cm,false)+'</div>':'<div class="sub">Pas encore de commentaire. Pose une question, donne un avancement…</div>')+
-       '<form class="cform" id="tcform" autocomplete="off"><textarea id="tcin" rows="1" maxlength="2000" placeholder="Écrire un commentaire… (Entrée pour envoyer)" aria-label="Commentaire"></textarea><button class="btn" type="submit">Envoyer</button></form>':'<div class="sub">Lance la mise à jour SQL « maj-collab.sql » pour activer les commentaires.</div>')+'</section>'+
+       '<form class="cform cf2" id="tcform" autocomplete="off">'+(cpend.length?'<div class="files cpend" id="cpend">'+fileTiles(cpend,!cmbusy,'data-cprm')+'</div>':'')+'<div class="crow2">'+(msgF?'<label class="ghost cclip" title="Joindre des fichiers (ou glisse-les ici, ou colle une capture)" aria-label="Joindre des fichiers"><input type="file" multiple hidden>'+sv(P.clip)+'</label>':'')+'<textarea id="tcin" rows="1" maxlength="2000" placeholder="'+(msgF?'Commentaire ou compte rendu… (Entrée pour envoyer)':'Écrire un commentaire… (Entrée pour envoyer)')+'" aria-label="Commentaire"></textarea><button class="btn" type="submit"'+(cmbusy?' disabled':'')+'>'+(cmbusy?'Envoi…':'Envoyer')+'</button></div></form>':'<div class="sub">Lance la mise à jour SQL « maj-collab.sql » pour activer les commentaires.</div>')+'</section>'+
      '<div class="tfoot">Créée le '+fmtDT(t.created_at)+(done?' · terminée le '+fmtDT(t.done_at):'')+'</div>'+
    '</div></div></div>';
   $('mtitle').textContent=t.title;
   const mf=$('mfiles');if(mf)fillNames(mf,files);
   wireDrop($('mdrop'),fs=>addToTask(t,fs));
+  const cp=$('cpend');if(cp)fillNames(cp,cpend);fillMsgFiles(box);if(msgF)wireDrop($('tcform'),addCp);
   const ni=$('tcin');if(ni){ni.value=kv;if(kv)autoGrow(ni);if(kf)ni.focus()}
   const ns=box.querySelector('.tmod');if(ns&&stp)ns.scrollTop=stp;
   const nc=box.querySelector('.cmts');if(nc){nc.scrollTop=cst==null||csb?nc.scrollHeight:cst}
@@ -1293,7 +1302,7 @@ function renderModal(){
 /* ---------- chargement ---------- */
 async function signAll(){
   const need=new Set();
-  for(const t of [...TASKS,...BUGS])for(const f of (Array.isArray(t.files)?t.files:[]))if(f&&f.path&&!URLS[f.path])need.add(f.path);
+  for(const t of [...TASKS,...BUGS,...MSGS])for(const f of (Array.isArray(t.files)?t.files:[]))if(f&&f.path&&!URLS[f.path])need.add(f.path);
   for(const id in PR){if(PR[id].photo&&!URLS[PR[id].photo])need.add(PR[id].photo);if(id===me&&PR[id].music&&!URLS[PR[id].music])need.add(PR[id].music)}
   for(const c of CATS)if(c.image&&!URLS[c.image])need.add(c.image);
   if(!need.size)return;
@@ -1302,11 +1311,11 @@ async function signAll(){
 }
 async function loadAll(){
   const q=(tb,o)=>{let r=sb.from(tb).select('*');return o?o(r):r};
-  const [p,l,t,c,cl,ms,ev,dc,bg,ide,vt,ac]=await Promise.all([q('profiles'),q('lists',r=>r.order('created_at')),q('tasks'),q('categories',r=>r.order('created_at')),q('cloud_items'),
-    q('messages',r=>r.order('created_at',{ascending:false}).limit(1000)),q('events',r=>r.order('day')),q('docs'),q('bugs'),q('ideas'),q('idea_votes'),q('activity',r=>r.order('created_at',{ascending:false}).limit(300))]);
+  const [p,l,t,c,cl,ms,ev,dc,bg,ide,vt,ac,mfc]=await Promise.all([q('profiles'),q('lists',r=>r.order('created_at')),q('tasks'),q('categories',r=>r.order('created_at')),q('cloud_items'),
+    q('messages',r=>r.order('created_at',{ascending:false}).limit(1000)),q('events',r=>r.order('day')),q('docs'),q('bugs'),q('ideas'),q('idea_votes'),q('activity',r=>r.order('created_at',{ascending:false}).limit(300)),sb.from('messages').select('id,files').limit(1)]);
   const err=p.error||l.error||t.error;if(err)throw err;
   v2=!c.error&&!cl.error;CATS=v2?c.data:[];CLOUD=v2?cl.data:[];if(cat&&!CATS.some(x=>x.id===cat))cat='';
-  v3=![ms,ev,dc,bg,ide,vt,ac].some(r=>r.error);
+  v3=![ms,ev,dc,bg,ide,vt,ac].some(r=>r.error);msgF=v3&&!mfc.error;
   MSGS=v3?ms.data.sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at))):[];EVENTS=v3?ev.data:[];DOCS=v3?dc.data:[];BUGS=v3?bg.data:[];IDEAS=v3?ide.data:[];VOTES=v3?vt.data:[];ACTS=v3?ac.data:[];
   if(v3&&!chan2&&session){chan2=sb.channel('forge-collab');['messages','events','docs','bugs','ideas','idea_votes','activity'].forEach(tb=>chan2.on('postgres_changes',{event:'*',schema:'public',table:tb},reload));chan2.subscribe()}
   for(const k in PR)delete PR[k];p.data.forEach(r=>PR[r.id]=r);LISTS=l.data;TASKS=t.data;
@@ -1348,7 +1357,7 @@ document.addEventListener('paste',e=>{
   if(pasteHook&&$('dlg').innerHTML){e.preventDefault();pasteHook(fs);return}
   if(cmpOpen){e.preventDefault();addPend(fs);toast('Capture ajoutée à la tâche');return}
   if(tab==='cloud'&&!openT&&!$('dlg').innerHTML){e.preventDefault();cloudUpload(fs);return}
-  if(openT){const t=findT(openT);if(t&&t.uid===me){e.preventDefault();addToTask(t,fs)}return}
+  if(openT){const t=findT(openT);if(!t)return;e.preventDefault();if(msgF&&(document.activeElement===$('tcin')||t.uid!==me))addCp(fs);else if(t.uid===me)addToTask(t,fs);return}
 });
 
 /* ---------- catégories & cloud ---------- */
@@ -2175,17 +2184,20 @@ function msgsHTML(ms,day){let out='',pd='',pa='',pt=0;
   for(const m of ms){const d=new Date(m.created_at),dk=d.toDateString(),t=+d;
     if(day&&dk!==pd){out+='<div class="dsep"><span>'+dayLabel(d)+'</span></div>';pa=''}
     const cont=pa===m.owner&&t-pt<5*60000;
-    out+='<div class="msg'+(cont?' cont':'')+'"><span class="mav">'+(cont?'':avH(m.owner,34))+'</span><div style="min-width:0">'+(cont?'':'<div class="mh2"><b>'+esc(nm(m.owner))+'</b><time datetime="'+esc(m.created_at)+'">'+(day?hm(d):fmtDate(m.created_at)+' · '+hm(d))+'</time></div>')+'<div class="mt">'+fmtBody(m.body)+'</div></div>'+
+    out+='<div class="msg'+(cont?' cont':'')+'"><span class="mav">'+(cont?'':avH(m.owner,34))+'</span><div style="min-width:0">'+(cont?'':'<div class="mh2"><b>'+esc(nm(m.owner))+'</b><time datetime="'+esc(m.created_at)+'">'+(day?hm(d):fmtDate(m.created_at)+' · '+hm(d))+'</time></div>')+(m.body?'<div class="mt">'+fmtBody(m.body)+'</div>':'')+(Array.isArray(m.files)&&m.files.length?'<div class="files mfl" data-mid="'+esc(m.id)+'">'+fileTiles(m.files,false,'')+'</div>':'')+'</div>'+
       (m.owner===me&&!m._tmp?'<button type="button" class="mdel" data-msgdel="'+esc(m.id)+'" aria-label="Supprimer le message" title="Supprimer">'+sv(P.trash)+'</button>':'<span></span>')+'</div>';
     pd=dk;pa=m.owner;pt=t}
   return out}
+function fillMsgFiles(root){root.querySelectorAll('.mfl[data-mid]').forEach(el=>{const m=MSGS.find(x=>String(x.id)===el.dataset.mid);if(m)fillNames(el,m.files||[])})}
+function addCp(fs){if(!openT)return;if(!msgF){toast('Lance la mise à jour SQL « maj-commentaires.sql » pour joindre des fichiers aux commentaires.');return}
+  for(const p of prep(fs)){if(p.type.startsWith('image/'))p.local=URL.createObjectURL(p.file);cpend.push(p)}renderModal();const i=$('tcin');if(i)i.focus()}
 function paintChat(){
   const el=$('chatlist');$('chatform').hidden=!v3||!loaded;
   if(!loaded){el.innerHTML=LOADER();return}if(!v3){el.innerHTML='<div style="padding:12px 0">'+needSQL()+'</div>';return}
   const near=!paintChat.done||el.scrollHeight-el.scrollTop-el.clientHeight<90;
   const ms=MSGS.filter(m=>!m.task_id&&inCat(m));
   el.innerHTML=ms.length?msgsHTML(ms,true):'<div class="empty" style="margin-top:12px;border:0;background:none">'+sv(CHAT).replace('class="i"','class="i" style="width:40px;height:40px;margin:0 auto 10px;display:block"')+'<b>Pas encore de message</b>Lance la discussion du projet « '+esc(catName(cat))+' ».</div>';
-  if(near)el.scrollTop=el.scrollHeight;paintChat.done=1;
+  fillMsgFiles(el);if(near)el.scrollTop=el.scrollHeight;paintChat.done=1;
   try{localStorage.setItem('forge-seen-'+(cat||'g'),new Date().toISOString())}catch(e){}
 }
 function sendMsg(body,taskId){body=String(body||'').trim().slice(0,2000);if(!body||!v3)return false;
@@ -2197,6 +2209,11 @@ document.addEventListener('input',e=>{if(e.target.id==='chatin'||e.target.id==='
 document.addEventListener('keydown',e=>{if((e.target.id==='chatin'||e.target.id==='tcin')&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.target.form.requestSubmit()}});
 document.addEventListener('submit',e=>{const f=e.target;
   if(f.id==='chatform'){e.preventDefault();const i=$('chatin'),v=i.value;if(!v.trim())return;i.value='';if(sendMsg(v)){autoGrow(i);i.focus()}else i.value=v}
+  if(f.id==='tcform'&&cpend.length){e.preventDefault();if(cmbusy||!openT)return;const tk=openT,t=findT(tk),files=[...cpend],v=$('tcin').value.trim().slice(0,2000);cmbusy=true;renderModal();
+    run(async()=>{try{const up=[];for(const p of files)up.push(await upload(p));
+      chk(await sb.from('messages').insert({owner:me,category_id:t?(t.category_id||null):(cat||null),task_id:tk,body:v,files:up}));
+      files.forEach(p=>p.local&&URL.revokeObjectURL(p.local));cpend=cpend.filter(p=>!files.includes(p));const n=$('tcin');if(n&&openT===tk){n.value='';n.style.height=''}
+      toast(up.length>1?'Compte rendu envoyé avec '+up.length+' fichiers':'Compte rendu envoyé avec 1 fichier')}finally{cmbusy=false}});return}
   if(f.id==='tcform'){e.preventDefault();const i=$('tcin'),v=i.value;if(!openT||!v.trim())return;i.value='';if(!sendMsg(v,openT)){const n=$('tcin');if(n)n.value=v;return}const n=$('tcin');if(n){n.style.height='';n.focus()}const c=document.querySelector('.cmts');if(c)c.scrollTop=c.scrollHeight}});
 
 /* ---------- activité ---------- */
@@ -2257,7 +2274,8 @@ document.addEventListener('click',ev=>{
   if(ds.wcancel){if(wikiChanged())guard(wikiStop);else wikiStop();return}
   if(ds.wback){const go=()=>{wedit=false;wnew=false;worig=null;wsel=null;render()};if(wedit&&wikiChanged())guard(go);else go();return}
   if(ds.wdel){const d=DOCS.find(x=>x.id===wsel);if(!d||d.owner!==me)return;confirmDlg('Supprimer cette page ?','« '+d.title+' » sera supprimée pour toute l’équipe.','Supprimer',()=>{DOCS=DOCS.filter(x=>x.id!==d.id);wsel=null;render();run(async()=>chk(await sb.from('docs').delete().eq('id',d.id)))});return}
-  if(ds.msgdel){const m=MSGS.find(x=>x.id===ds.msgdel);if(!m||m.owner!==me)return;confirmDlg('Supprimer ce message ?','Il disparaîtra pour toute l’équipe.','Supprimer',()=>{MSGS=MSGS.filter(x=>x.id!==m.id);render();run(async()=>chk(await sb.from('messages').delete().eq('id',m.id)))});return}
+  if(ds.cprm!==undefined){const p=cpend.splice(+ds.cprm,1)[0];if(p&&p.local)URL.revokeObjectURL(p.local);renderModal();return}
+  if(ds.msgdel){const m=MSGS.find(x=>x.id===ds.msgdel);if(!m||m.owner!==me)return;confirmDlg('Supprimer ce message ?','Il disparaîtra pour toute l’équipe.','Supprimer',()=>{MSGS=MSGS.filter(x=>x.id!==m.id);render();run(async()=>{chk(await sb.from('messages').delete().eq('id',m.id));const ps=(m.files||[]).map(f=>f.path).filter(Boolean);if(ps.length)await sb.storage.from(BUCKET).remove(ps)})});return}
   if(ds.act){openAct(ACTS.find(a=>String(a.id)===ds.act));return}
   if(ds.ascope){ascope=ds.ascope;paintActivity();return}
 });

@@ -393,3 +393,14 @@ create trigger forge_log_events after insert on public.events for each row execu
 
 -- ---------- Temps réel ----------
 alter publication supabase_realtime add table public.messages, public.events, public.docs, public.bugs, public.ideas, public.idea_votes, public.activity;
+
+
+-- =====================================================================
+-- Forge — mise à jour : pièces jointes dans les commentaires des tâches
+-- (comptes rendus avec fichiers, captures…)
+-- À coller dans Supabase > SQL Editor > New query > Run
+-- =====================================================================
+alter table public.messages add column if not exists files jsonb not null default '[]'::jsonb;
+-- un commentaire peut maintenant ne contenir que des fichiers (texte vide autorisé)
+alter table public.messages drop constraint if exists messages_body_check;
+alter table public.messages add constraint messages_body_check check (char_length(body) <= 2000);

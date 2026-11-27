@@ -75,6 +75,10 @@ Tant que ce script n'est pas lancé, les nouveaux onglets affichent « Mise à j
 - **Wiki** : pages modifiables par toute l'équipe ; seul le créateur d'une page peut la supprimer.
 - **Activité** : journal automatique de ce que fait l'équipe.
 
+## Mise à jour : fichiers dans les commentaires (comptes rendus)
+
+Lance `maj-commentaires.sql` dans **SQL Editor** → **New query** → **Run** (après `maj-collab.sql`). On peut ensuite joindre des fichiers à un commentaire de tâche avec le trombone, en les glissant sur le champ, ou en collant une capture (Ctrl+V).
+
 ## Cloud de 10 Go gratuits, sans carte bancaire (Backblaze B2 + Worker Cloudflare)
 
 Les comptes, tâches, pièces jointes et profils restent sur Supabase ; seuls les **fichiers du cloud** vont chez Backblaze.
