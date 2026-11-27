@@ -151,11 +151,18 @@ input[type=text],input[type=email],input[type=password]{min-height:44px;backgrou
 .intro.out{opacity:0;pointer-events:none}
 .st{grid-area:1/1;display:grid;justify-items:center;gap:22px;text-align:center}
 .st1{animation:stout .55s 2.9s ease forwards}
-.ent{width:min(46vw,230px);height:auto;overflow:visible;animation:glow .8s 1.9s ease forwards}
-.ent .k{fill:none;stroke:#ffae00;stroke-width:1.6;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1s ease forwards}
-.ent .fp{fill:#ffae00;opacity:0;animation:fadein .55s 1.75s ease forwards}
-.by{color:#d9dbe0;font-size:20px;font-weight:600;opacity:0;transform:translateY(8px);animation:rise .6s 2s ease forwards}
-.by b{color:#ffae00;font-weight:800}
+.ent{width:min(52vw,250px);height:auto;overflow:visible;animation:glow 1.1s 1.25s ease forwards}
+.ent .ring,.ent .glyph,.ent .halo{transform-box:view-box;transform-origin:128px 128px;opacity:0}
+.ent .ring,.ent .glyph{fill:#ffae00}
+.ent .ring{animation:entring 1s .15s cubic-bezier(.2,.9,.25,1.12) forwards}
+.ent .glyph{animation:entglyph .7s .8s cubic-bezier(.2,.9,.3,1.3) forwards}
+.ent .halo{fill:none;stroke:#ffae00;stroke-width:2.5;animation:enthalo 1.4s .25s ease-out forwards}
+.ent .halo.h2{animation-delay:.95s}
+.ent .shine{transform:translateX(0) skewX(-20deg);animation:entshine .85s 1.55s ease-in-out forwards}
+@keyframes entring{0%{opacity:0;transform:scale(.5) rotate(-75deg)}55%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes entglyph{0%{opacity:0;transform:scale(1.8)}100%{opacity:1;transform:none}}
+@keyframes enthalo{0%{opacity:.85;transform:scale(.45)}100%{opacity:0;transform:scale(1.4)}}
+@keyframes entshine{to{transform:translateX(460px) skewX(-20deg)}}
 .st2{opacity:0;animation:fadein .01s 3.25s forwards}
 .flg{width:min(30vw,124px);height:auto;overflow:visible}
 .flg rect{transform-box:fill-box;transform-origin:center;transform:scale(0) rotate(-12deg);animation:pop .55s 3.3s cubic-bezier(.3,1.5,.5,1) forwards}
@@ -1014,7 +1021,8 @@ const ENT=[["M70.2 27.0L69.0 28.2L63.0 39.2L12.0 127.2L12.0 128.5L70.0 228.5L186
 function playIntro(done){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches){done();return}
   const el=$('intro');
-  el.innerHTML='<div class="intro" aria-hidden="true"><div class="st st1"><svg class="ent" viewBox="0 0 256 256">'+ENT.map(([d,t])=>'<path class="k" style="animation-delay:'+t+'s" d="'+d+'" pathLength="1"/>').join('')+'<path class="fp" fill-rule="evenodd" d="'+ENT.map(x=>x[0]).join(' ')+'"/></svg><div class="by">By <b>Entarsh Studio</b></div></div>'+
+  el.innerHTML='<div class="intro" aria-hidden="true"><div class="st st1"><svg class="ent" viewBox="0 0 256 256"><defs><clipPath id="entc"><path clip-rule="evenodd" d="'+ENT.map(x=>x[0]).join(' ')+'"/></clipPath><linearGradient id="entg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>'+
+   '<circle class="halo" cx="128" cy="128" r="112"/><circle class="halo h2" cx="128" cy="128" r="112"/><path class="ring" fill-rule="evenodd" d="'+ENT.slice(0,8).map(x=>x[0]).join(' ')+'"/><path class="glyph" fill-rule="evenodd" d="'+ENT.slice(8).map(x=>x[0]).join(' ')+'"/><g clip-path="url(#entc)"><rect class="shine" x="-140" y="-40" width="90" height="340" fill="url(#entg)"/></g></svg></div>'+
    '<div class="st st2"><svg class="flg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#ff4d4d"/><path class="k2" d="M16 5l9 5v12l-9 5-9-5V10z" pathLength="1"/><path class="k2 c" d="M11.5 16.5l3 3 6-6.5" pathLength="1"/></svg><b class="ft">Forge</b><span class="fs">Les tâches de l’équipe</span></div>'+
    '<button type="button" class="skip">Passer</button></div>';
   let fin=false;const end=()=>{if(fin)return;fin=true;const o=el.firstChild;if(o)o.classList.add('out');setTimeout(()=>{if(fin)el.innerHTML=''},520);done()};
@@ -1624,7 +1632,7 @@ function paintSelBar(kids){
     sb2.hidden=false;sb2.innerHTML='<b>'+sel.length+' élément'+(sel.length>1?'s':'')+' sélectionné'+(sel.length>1?'s':'')+'</b>'+(nf?'<button type="button" class="ghost" data-bulk="dl">'+sv(DLI)+'Télécharger'+(nf>1?' ('+nf+')':'')+'</button>':'')+
       (allMine?'<button type="button" class="ghost" data-bulk="mv">'+sv(MOVE)+'Déplacer</button><button type="button" class="ghost" data-bulk="rm">'+sv(P.trash)+'Supprimer</button>':'')+
       '<button type="button" class="ghost" data-bulk="all">Tout sélectionner</button><button type="button" class="ghost" data-bulk="none" aria-label="Annuler la sélection">'+sv(P.x)+'</button>'+
-      (allMine?'':'<span class="sub">Déplacer et supprimer : seulement si tous les éléments choisis sont à toi.</span>')+'<span class="sub">Astuce : Ctrl + clic pour ajouter un élément, Maj + clic pour prendre toute une plage, Ctrl + A pour tout prendre, Suppr pour supprimer.</span>'}
+      (allMine?'':'<span class="sub">Déplacer et supprimer : seulement si tous les éléments choisis sont à toi.</span>')+'<span class="sub">Astuce : coche les cases, ou Ctrl + clic pour ajouter un élément et Maj + clic pour prendre toute une plage, Ctrl + A pour tout prendre, Suppr pour supprimer.</span>'}
 }
 function paintSel(){const kids=cloudKids(cdir);for(const id of [...csel])if(!kids.some(k=>k.id===id))csel.delete(id);
   document.querySelectorAll('#cloud [data-copen]').forEach(b=>{const on=csel.has(b.dataset.copen),box=b.closest('.crow,.ctile');if(box)box.classList.toggle('sel',on);const c=box&&box.querySelector('.csel');if(c)c.setAttribute('aria-pressed',on)});
@@ -1637,7 +1645,6 @@ function selClick(id,ev){
   paintSel();
 }
 const openItem=x=>{if(x.kind==='folder')goDir(x.id);else previewDlg(x)};
-document.addEventListener('dblclick',ev=>{const b=ev.target.closest&&ev.target.closest('[data-copen]');if(!b||ev.ctrlKey||ev.metaKey||ev.shiftKey)return;const x=CLOUD.find(c=>c.id===b.dataset.copen);if(x)openItem(x)});
 document.addEventListener('keydown',ev=>{
   if(tab!=='cloud'||$('dlg').innerHTML||$('confirm').innerHTML||openT)return;
   const inField=ev.target.closest&&ev.target.closest('input,textarea,select,[contenteditable]');if(inField)return;
@@ -1662,9 +1669,7 @@ document.addEventListener('click',ev=>{
     if(ds.bulk==='none'){csel.clear();paintCloud()}else if(ds.bulk==='all'){cloudKids(cdir).forEach(k=>csel.add(k.id));paintCloud()}
     else if(ds.bulk==='dl')bulkDownload(xs);else if(ds.bulk==='mv')moveDlg(xs);else if(ds.bulk==='rm')cdelete(xs);return}
   if(ds.copen){const x=CLOUD.find(c=>c.id===ds.copen);if(!x)return;
-    const touch=matchMedia('(pointer:coarse)').matches;
-    if(ev.shiftKey||ev.ctrlKey||ev.metaKey||!touch)selClick(x.id,ev);
-    else if(csel.size){if(csel.has(x.id))csel.delete(x.id);else csel.add(x.id);paintSel()}
+    if(ev.shiftKey||ev.ctrlKey||ev.metaKey)selClick(x.id,ev);
     else openItem(x);
     return}
   if(ds.cact){const x=CLOUD.find(c=>c.id===ds.id);cmenu=null;paintCloud();if(!x)return;
