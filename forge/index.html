@@ -299,6 +299,11 @@ label.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
 .mvl button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mvl button:hover{background:var(--raise)}
 .mvl button.on{background:var(--redbg);color:#fff;font-weight:700}
+/* recadrage */
+.crop{position:relative;border-radius:12px;overflow:hidden;background:#000}
+.crop canvas{display:block;width:100%;aspect-ratio:1;touch-action:none;cursor:grab}
+.crop canvas:active{cursor:grabbing}
+.cropb{display:flex;gap:8px;flex-wrap:wrap}
 /* stockage */
 .stg{display:grid;gap:6px}
 .stgh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--mute)}
@@ -846,22 +851,53 @@ function nameDlg(title,val,ok,fn){
   m.querySelector('h3').textContent=title;m.querySelector('.btn').textContent=ok;const i=$('ndn');i.value=val;i.focus();const dot=val.lastIndexOf('.');i.setSelectionRange(0,dot>0?dot:val.length);
   $('ndf').onsubmit=e=>{e.preventDefault();const v=i.value.trim().replace(/[\/\\]/g,'-').slice(0,120);if(!v){i.focus();return}closeDlg();fn(v)}}
 
+function cropDlg(src){return new Promise(done=>{
+  const host=document.createElement('div');document.body.appendChild(host);
+  host.innerHTML='<div class="ov"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="cpt" style="width:min(480px,100%)"><h3 id="cpt">Ajuster l’image</h3><p class="sub" style="display:block;margin:0">Glisse l’image pour la placer, règle la taille avec le zoom (ou la molette). Le cercle montre ce qui apparaîtra dans la pastille.</p><div class="crop"><canvas width="560" height="560" aria-label="Zone de recadrage"></canvas></div><label class="f">Taille<div class="vol"><input type="range" min="1" max="5" step="any" value="1" aria-label="Zoom"><b>100 %</b></div></label><div class="cropb"><button type="button" class="ghost" data-k="fit">Image entière</button><button type="button" class="ghost" data-k="fill">Remplir le cercle</button></div><div class="acts" style="justify-content:flex-end;flex-wrap:wrap"><button type="button" class="ghost" data-k="no">Annuler</button><button type="button" class="btn" data-k="ok">Utiliser cette image</button></div></div></div>';
+  const S=560,cv=host.querySelector('canvas'),g=cv.getContext('2d'),zr=host.querySelector('input'),zv=host.querySelector('.vol b'),img=new Image();
+  let base=1,z=1,ox=0,oy=0,ready=false,minZ=1;
+  const fin=b=>{host.remove();removeEventListener('keydown',key,true);done(b)};
+  const key=e=>{if(e.key==='Escape'){e.stopPropagation();e.preventDefault();fin(null)}};addEventListener('keydown',key,true);
+  const W=()=>img.naturalWidth*base*z,H=()=>img.naturalHeight*base*z;
+  const clamp=()=>{const w=W(),h=H();ox=w>=S?Math.min(0,Math.max(S-w,ox)):(S-w)/2;oy=h>=S?Math.min(0,Math.max(S-h,oy)):(S-h)/2};
+  const draw=()=>{g.fillStyle='#0b0c0f';g.fillRect(0,0,S,S);if(!ready)return;g.drawImage(img,ox,oy,W(),H());
+    g.save();g.fillStyle='rgba(0,0,0,.6)';g.beginPath();g.rect(0,0,S,S);g.arc(S/2,S/2,S/2-6,0,Math.PI*2,true);g.fill('evenodd');
+    g.strokeStyle='#fff';g.lineWidth=3;g.beginPath();g.arc(S/2,S/2,S/2-6,0,Math.PI*2);g.stroke();g.restore();zv.textContent=Math.round(z*100)+' %'};
+  const setZ=(nz,cx,cy)=>{nz=Math.max(minZ,Math.min(5,nz));cx=cx??S/2;cy=cy??S/2;const k=nz/z;ox=cx-(cx-ox)*k;oy=cy-(cy-oy)*k;z=nz;zr.value=z;clamp();draw()};
+  img.onload=()=>{base=Math.max(S/img.naturalWidth,S/img.naturalHeight);minZ=Math.min(1,Math.min(S/img.naturalWidth,S/img.naturalHeight)/base);zr.min=minZ.toFixed(3);ready=true;z=1;ox=(S-W())/2;oy=(S-H())/2;draw()};
+  img.onerror=()=>{toast('Impossible de lire cette image.');fin(null)};
+  img.crossOrigin='anonymous';img.src=src;draw();
+  zr.oninput=()=>setZ(+zr.value);
+  cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect(),k=S/r.width;setZ(z*(e.deltaY<0?1.08:1/1.08),(e.clientX-r.left)*k,(e.clientY-r.top)*k)},{passive:false});
+  let drag=null;
+  cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,ox,oy}});
+  cv.addEventListener('pointermove',e=>{if(!drag)return;const k=S/cv.getBoundingClientRect().width;ox=drag.ox+(e.clientX-drag.x)*k;oy=drag.oy+(e.clientY-drag.y)*k;clamp();draw()});
+  cv.addEventListener('pointerup',()=>{drag=null});cv.addEventListener('pointercancel',()=>{drag=null});
+  host.querySelector('.ov').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(e.target===host.querySelector('.ov'))return fin(null);if(!b)return;
+    const k=b.dataset.k;if(k==='no')return fin(null);if(k==='fit')return setZ(minZ);if(k==='fill')return setZ(1);
+    if(k==='ok'&&ready){const O=512,out=document.createElement('canvas');out.width=out.height=O;const c=out.getContext('2d'),f=O/S;c.fillStyle='#17191e';c.fillRect(0,0,O,O);c.drawImage(img,ox*f,oy*f,W()*f,H()*f);
+      try{out.toBlob(b=>{if(b)fin(b);else out.toBlob(b2=>fin(b2),'image/png')},'image/webp',0.9)}catch(err){toast('Impossible de recadrer cette image.');fin(null)}}});
+  zr.focus();
+})}
 function catDlg(c){
   const st={icon:c?c.icon:'idee',color:c&&COLS.includes(c.color)?c.color:COLS[0],image:c&&c.image||''};let sure=false,upl=false;
   openDlg('<form id="catf" autocomplete="off" style="display:grid;gap:18px"><div class="mh"><h3 style="padding-top:0">'+(c?'Modifier la catégorie':'Nouvelle catégorie')+'</h3><button type="button" class="del" data-dlgclose="1" aria-label="Fermer">'+sv(P.x)+'</button></div><p class="sub" style="margin:0">Chaque catégorie a ses propres listes, tâches et son propre cloud.</p><label class="f">Nom<input type="text" id="catn" maxlength="40" placeholder="Ex. : Helper"></label>'+
-   '<div class="f">Image<div class="acts" style="flex-wrap:wrap;gap:12px"><span class="catpv" id="catpv"></span><label class="ghost" style="display:inline-flex;align-items:center;cursor:pointer;min-height:40px" id="catimgl">Choisir une image<input type="file" id="catimg" accept="image/*" hidden></label><button type="button" class="ghost" id="catnoimg">Retirer l’image</button></div><span class="sub" style="font-weight:400">Facultatif : l’image remplace l’icône dans la pastille.</span></div>'+
+   '<div class="f">Image<div class="acts" style="flex-wrap:wrap;gap:12px"><span class="catpv" id="catpv"></span><label class="ghost" style="display:inline-flex;align-items:center;cursor:pointer;min-height:40px" id="catimgl">Choisir une image<input type="file" id="catimg" accept="image/*" hidden></label><button type="button" class="ghost" id="catcrop">Recadrer</button><button type="button" class="ghost" id="catnoimg">Retirer l’image</button></div><span class="sub" style="font-weight:400">Facultatif : l’image remplace l’icône dans la pastille. Après le choix, tu peux la déplacer et zoomer.</span></div>'+
    '<div class="f">Icône<div class="icons" id="cati"></div></div><div class="f">Couleur<div class="cols" id="catc"></div></div><div class="acts" style="justify-content:flex-end;flex-wrap:wrap">'+(c?'<button type="button" class="ghost" id="catdel" style="margin-right:auto">Supprimer</button>':'')+'<button type="button" class="ghost" data-dlgclose="1">Annuler</button><button class="btn" type="submit" id="catok">'+(c?'Enregistrer':'Créer la catégorie')+'</button></div></form>');
   const paint=()=>{$('cati').innerHTML=Object.keys(IC).map(k=>'<button type="button" data-k="'+k+'" class="'+(k===st.icon?'on':'')+'">'+svg(k)+IC[k][0]+'</button>').join('');$('catc').innerHTML=COLS.map(x=>'<button type="button" data-k="'+x+'" class="'+(x===st.color?'on':'')+'" style="background:'+x+'" aria-label="Couleur"></button>').join('');
     const pv=$('catpv');pv.style.background=st.color;pv.innerHTML=st.image&&URLS[st.image]?'<img alt="" src="'+esc(URLS[st.image])+'">':svg(st.icon);
-    $('catnoimg').hidden=!st.image;$('catimgl').firstChild.textContent=upl?'Envoi…':(st.image?'Changer l’image':'Choisir une image');$('catok').disabled=upl};
+    $('catnoimg').hidden=!st.image;$('catcrop').hidden=!(st.image&&URLS[st.image])||upl;$('catimgl').firstChild.textContent=upl?'Envoi…':(st.image?'Changer l’image':'Choisir une image');$('catok').disabled=upl};
   $('catn').value=c?c.name:'';paint();$('catn').focus();
   $('cati').onclick=e=>{const b=e.target.closest('button');if(b){st.icon=b.dataset.k;paint()}};
   $('catc').onclick=e=>{const b=e.target.closest('button');if(b){st.color=b.dataset.k;paint()}};
   $('catnoimg').onclick=()=>{st.image='';paint()};
-  $('catimg').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(!/^image\//.test(f.type)){toast('Choisis une image.');return}
-    const p=prep([f])[0];if(!p)return;upl=true;paint();
+  const useBlob=async blob=>{if(!blob)return;const file=new File([blob],'categorie.'+(blob.type==='image/webp'?'webp':'png'),{type:blob.type});
+    const p=prep([file])[0];if(!p)return;upl=true;paint();
     try{const r=await upload(p);const {data}=await sb.storage.from(BUCKET).createSignedUrl(r.path,6*3600);if(data)URLS[r.path]=data.signedUrl;st.image=r.path}
     catch(err){toast(frErr(err))}finally{upl=false;if($('catpv'))paint()}};
+  $('catimg').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(!/^image\//.test(f.type)){toast('Choisis une image.');return}
+    const u=URL.createObjectURL(f);const blob=await cropDlg(u);URL.revokeObjectURL(u);useBlob(blob)};
+  $('catcrop').onclick=async()=>{if(st.image&&URLS[st.image])useBlob(await cropDlg(URLS[st.image]))};
   if(c)$('catdel').onclick=()=>{
     const used=LISTS.some(l=>l.category_id===c.id)||TASKS.some(t=>t.category_id===c.id)||CLOUD.some(x=>x.category_id===c.id);
     if(used){toast('Vide d’abord la catégorie : ses listes, ses tâches et son cloud.');return}
@@ -904,7 +940,7 @@ function cloudTrail(id){const out=[];let x=CLOUD.find(c=>c.id===id),n=0;while(x&
 function descendants(id){const out=[],walk=p=>{for(const x of CLOUD)if(x.parent_id===p){out.push(x);walk(x.id)}};walk(id);return out}
 function uniqName(n,dir,self){const names=new Set(cloudKids(dir||'').filter(x=>x.id!==self).map(x=>x.name.toLowerCase()));if(!names.has(n.toLowerCase()))return n;const m=n.match(/^(.*?)(\.[^.]*)?$/);for(let k=2;k<999;k++){const c=m[1]+' ('+k+')'+(m[2]||'');if(!names.has(c.toLowerCase()))return c}return n}
 const TRIED=new Set();let signing=false;
-async function signPaths(ps){if(signing)return;signing=true;ps.forEach(p=>TRIED.add(p));try{const {data}=await sb.storage.from(BUCKET).createSignedUrls(ps,6*3600);(data||[]).forEach(d=>{if(d&&d.signedUrl&&d.path)URLS[d.path]=d.signedUrl})}catch(e){}finally{signing=false}paintCloud()}
+async function signPaths(ps){if(signing)return;signing=true;ps.forEach(p=>TRIED.add(p));try{Object.assign(URLS,await getUrls(ps))}catch(e){}finally{signing=false}paintCloud()}
 function goDir(id){cdir=id||'';cmenu=null;for(const a of cloudTrail(cdir))xopen.add(a.id);if(innerWidth<=820)ctreeOn=false;paintCloud()}
 function treeHTML(pid,dep){return cloudKids(pid).filter(f=>f.kind==='folder').map(f=>{const id=esc(f.id),has=CLOUD.some(c=>c.parent_id===f.id&&c.kind==='folder'),op=xopen.has(f.id);
   return '<div class="tnode'+(f.id===cdir?' on':'')+'" style="--d:'+dep+'" data-dropdir="'+id+'"><button type="button" class="tw'+(op?' op':'')+'" data-ctog="'+id+'" aria-label="'+(op?'Replier':'Déplier')+'" aria-expanded="'+op+'"'+(has?'':' disabled')+'>'+sv(P.chev)+'</button><button type="button" class="tl" data-cdir="'+id+'">'+sv(P.dossier)+'<span>'+esc(f.name)+'</span></button></div>'+(op&&has?treeHTML(f.id,dep+1):'')}).join('')}
@@ -934,19 +970,43 @@ function paintCloud(){
   else $('cloud').innerHTML='<div class="chead"><span></span><span>Nom</span><span>Taille</span><span>Ajouté par</span><span>Modifié</span><span></span></div>'+kids.map((x,i)=>{const id=esc(x.id),f=x.kind==='folder',up=kids.length>4&&i>=kids.length-2;
       return '<div class="crow"'+(x.owner===me?' draggable="true" data-drag="'+id+'"':'')+(f?' data-dropdir="'+id+'"':'')+'>'+thumbOf(x)+'<button type="button" class="tb" data-copen="'+id+'" title="'+esc(x.name)+'"><div class="tt">'+esc(x.name)+'</div><div class="sub">'+meta(x)+' · '+esc(nm(x.owner))+' · '+fmtDate(x.updated_at||x.created_at)+'</div></button><span class="csz">'+(f?meta(x):fmtSize(+x.size||0))+'</span><span class="cby">'+esc(nm(x.owner))+'</span><span class="cdt">'+fmtDate(x.updated_at||x.created_at)+'</span><button type="button" class="del" data-cmenu="'+id+'" aria-label="Actions" aria-haspopup="menu" aria-expanded="'+(cmenu===x.id)+'">'+sv(DOTS)+'</button>'+menu(x,up)+'</div>'}).join('');
   const tot=CLOUD.filter(x=>inCat(x)&&x.kind==='file'),fo=kids.filter(x=>x.kind==='folder').length,fi=kids.length-fo;
-  $('cstat').innerHTML=stgHTML(0)+'<span>'+esc((fo?fo+' dossier'+(fo>1?'s':'')+' · ':'')+fi+' fichier'+(fi>1?'s':'')+' ici · '+tot.length+' fichier'+(tot.length>1?'s':'')+' et '+fmtSize(tot.reduce((a,x)=>a+(+x.size||0),0))+' dans la catégorie')+'</span>';
+  $('cstat').innerHTML=stgHTML(0)+(R2ON?stgHTML(0,'Pièces jointes, photos et musiques (Supabase)','sb'):'')+'<span>'+esc((fo?fo+' dossier'+(fo>1?'s':'')+' · ':'')+fi+' fichier'+(fi>1?'s':'')+' ici · '+tot.length+' fichier'+(tot.length>1?'s':'')+' et '+fmtSize(tot.reduce((a,x)=>a+(+x.size||0),0))+' dans la catégorie')+'</span>';
 }
 
+/* ---------- Cloudflare R2 (cloud) ---------- */
+const R2W=String(CFG.r2Worker||'').trim().replace(/\/$/,''),R2ON=/^https:\/\/[^ ]+$/.test(R2W)&&!/TON-WORKER/.test(R2W);
+const R2QUOTA=Math.round((+CFG.r2StorageGB||10)*1024*1024*1024);
+const isR2=p=>String(p||'').startsWith('r2:');
+async function r2(method,path,body,headers){
+  const r=await fetch(R2W+path,{method,headers:{Authorization:'Bearer '+session.access_token,...(headers||{})},body});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw {message:j.error||('Cloudflare : erreur '+r.status)};return j}
+async function getUrls(paths,ttl){
+  const out={},sp=paths.filter(p=>!isR2(p)),rp=paths.filter(isR2);
+  if(sp.length){const {data}=await sb.storage.from(BUCKET).createSignedUrls(sp,ttl||6*3600);(data||[]).forEach(d=>{if(d&&d.signedUrl&&d.path)out[d.path]=d.signedUrl})}
+  if(rp.length&&R2ON){const j=await r2('POST','/sign',JSON.stringify({keys:rp.map(p=>p.slice(3)),ttl:ttl||6*3600}),{'Content-Type':'application/json'});for(const p of rp){const u=j.urls&&j.urls[p.slice(3)];if(u)out[p]=u}}
+  return out}
+async function removePaths(paths){
+  const sp=paths.filter(p=>!isR2(p)),rp=paths.filter(isR2);
+  if(sp.length)await sb.storage.from(BUCKET).remove(sp);
+  if(rp.length&&R2ON)for(const p of rp)await r2('DELETE','/o/'+encodeURIComponent(p.slice(3))).catch(()=>{})}
+
 /* ---------- stockage du site ---------- */
-const QUOTA=Math.round((+CFG.storageGB||1)*1024*1024*1024),BIGWARN=50*1024*1024;
-const USAGE={bytes:null,exact:false};
+const QUOTA=Math.round((+CFG.storageGB||1)*1024*1024*1024);window.__Q=QUOTA;
+const USAGE={bytes:null,exact:false,r2:null};
 const estUsage=()=>CLOUD.reduce((a,x)=>a+(x.kind==='file'?(+x.size||0):0),0)+TASKS.reduce((a,t)=>a+(Array.isArray(t.files)?t.files.reduce((b,f)=>b+(+(f&&f.size)||0),0):0),0);
 const usedBytes=()=>USAGE.bytes!=null?USAGE.bytes:estUsage();
-async function fetchUsage(){try{const r=await sb.rpc('storage_usage');if(!r.error&&r.data!=null){USAGE.bytes=+r.data;USAGE.exact=true}else{USAGE.bytes=null;USAGE.exact=false}}catch(e){USAGE.bytes=null;USAGE.exact=false}}
-function stgHTML(extra,label){
-  const used=usedBytes(),add=Math.max(0,extra||0),tot=used+add,p=used/QUOTA*100,pa=Math.min(100-Math.min(100,p),add/QUOTA*100),pt=tot/QUOTA*100,left=QUOTA-tot;
+async function fetchUsage(){
+  try{const r=await sb.rpc('storage_usage');if(!r.error&&r.data!=null){USAGE.bytes=+r.data;USAGE.exact=true}else{USAGE.bytes=null;USAGE.exact=false}}catch(e){USAGE.bytes=null;USAGE.exact=false}
+  if(R2ON&&session){try{const j=await r2('GET','/usage');USAGE.r2=+j.bytes}catch(e){USAGE.r2=null}}}
+const r2Est=()=>CLOUD.reduce((a,x)=>a+(x.kind==='file'&&isR2(x.path)?(+x.size||0):0),0);
+const CTGT=()=>R2ON?'r2':'sb';
+const cloudUsed=()=>R2ON?(USAGE.r2!=null?USAGE.r2:r2Est()):usedBytes();
+const cloudQuota=()=>R2ON?R2QUOTA:QUOTA;
+function stgHTML(extra,label,tgt){
+  tgt=tgt||CTGT();const QUOTA=tgt==='r2'?R2QUOTA:window.__Q,exact=tgt==='r2'?USAGE.r2!=null:USAGE.exact;
+  const used=tgt==='r2'?(USAGE.r2!=null?USAGE.r2:r2Est()):usedBytes(),add=Math.max(0,extra||0),tot=used+add,p=used/QUOTA*100,pa=Math.min(100-Math.min(100,p),add/QUOTA*100),pt=tot/QUOTA*100,left=QUOTA-tot;
   const cls=pt>=95?' full':pt>=80?' warn':'';
-  return '<div class="stg'+cls+'" role="meter" aria-valuemin="0" aria-valuemax="'+QUOTA+'" aria-valuenow="'+tot+'" aria-label="Stockage du site"><div class="stgh"><span>'+(label||'Stockage du site')+'</span><b>'+fmtSize(tot)+' sur '+fmtSize(QUOTA)+' · '+(pt<1&&tot>0?'moins de 1':Math.floor(pt))+' %</b></div><div class="stgb"><i style="width:'+Math.min(100,p)+'%"></i>'+(add?'<i class="add" style="width:'+pa+'%"></i>':'')+'</div><div class="sub">'+(left>=0?'Il reste '+fmtSize(left):'Dépassement de '+fmtSize(-left))+(USAGE.exact?'':' (estimation : lance la mise à jour SQL du stockage pour le chiffre exact)')+'</div></div>'}
+  return '<div class="stg'+cls+'" role="meter" aria-valuemin="0" aria-valuemax="'+QUOTA+'" aria-valuenow="'+tot+'" aria-label="Stockage du site"><div class="stgh"><span>'+(label||(tgt==='r2'?'Cloud de l’équipe (Cloudflare R2)':'Stockage du site'))+'</span><b>'+fmtSize(tot)+' sur '+fmtSize(QUOTA)+' · '+(pt<1&&tot>0?'moins de 1':Math.floor(pt))+' %</b></div><div class="stgb"><i style="width:'+Math.min(100,p)+'%"></i>'+(add?'<i class="add" style="width:'+pa+'%"></i>':'')+'</div><div class="sub">'+(left>=0?'Il reste '+fmtSize(left):'Dépassement de '+fmtSize(-left))+(exact?'':tgt==='r2'?' (estimation)':' (estimation : lance la mise à jour SQL du stockage pour le chiffre exact)')+'</div></div>'}
 
 /* ---------- transferts avec barre de progression ---------- */
 const XF={on:false,abort:null};
@@ -958,8 +1018,10 @@ function xfDone(title,detail,state,stg){xfShow({title,detail,pct:100,state:state
 const speed=(b,t0)=>{const s=(performance.now()-t0)/1000;return s>.5?fmtSize(Math.round(b/s))+'/s':''};
 const eta=(b,tot,t0)=>{const s=(performance.now()-t0)/1000;if(s<1||!b)return '';const r=(tot-b)/(b/s);return r<60?'environ '+Math.max(1,Math.round(r))+' s restantes':'environ '+Math.round(r/60)+' min restantes'};
 function xhrUpload(path,blob,type,onp){return new Promise((res,rej)=>{const x=new XMLHttpRequest();XF.abort=()=>x.abort();
-  x.open('POST',CFG.url.replace(/\/$/,'')+'/storage/v1/object/'+BUCKET+'/'+path.split('/').map(encodeURIComponent).join('/'));
-  x.setRequestHeader('Authorization','Bearer '+session.access_token);x.setRequestHeader('apikey',CFG.anonKey);x.setRequestHeader('x-upsert','false');x.setRequestHeader('Content-Type',type||'application/octet-stream');
+  if(isR2(path)){x.open('PUT',R2W+'/o/'+encodeURIComponent(path.slice(3)));x.setRequestHeader('Authorization','Bearer '+session.access_token)}
+  else{x.open('POST',CFG.url.replace(/\/$/,'')+'/storage/v1/object/'+BUCKET+'/'+path.split('/').map(encodeURIComponent).join('/'));
+  x.setRequestHeader('Authorization','Bearer '+session.access_token);x.setRequestHeader('apikey',CFG.anonKey);x.setRequestHeader('x-upsert','false')}
+  x.setRequestHeader('Content-Type',type||'application/octet-stream');
   x.upload.onprogress=e=>{if(e.lengthComputable)onp(e.loaded)};
   x.onload=()=>{if(x.status>=200&&x.status<300)res();else{let m='Erreur '+x.status;try{const j=JSON.parse(x.responseText);m=j.message||j.error||m}catch(e){}rej({message:m})}};
   x.onerror=()=>rej({message:'Failed to fetch'});x.onabort=()=>rej({message:'__abort'});x.send(blob)})}
@@ -970,21 +1032,21 @@ async function cloudUpload(files){
   if(!list.length)return;
   const dir=cdir||null,cid=cat||null,where=dir?(CLOUD.find(c=>c.id===dir)||{}).name:catName(cat),total=list.reduce((a,p)=>a+p.file.size,0);
   await fetchUsage();
-  const used=usedBytes(),free=QUOTA-used,big=list.filter(p=>p.file.size>BIGWARN);
-  const li=a=>'<ul class="bigl">'+a.map(p=>'<li>'+thumbOf({kind:'file',name:p.name,mime:p.type})+'<span>'+esc(p.name)+'</span><b>'+fmtSize(p.file.size)+(p.file.size>CHUNK?' · '+Math.ceil(p.file.size/CHUNK)+' morceaux':'')+'</b></li>').join('')+'</ul>';
+  const CH=R2ON?90*1024*1024:CHUNK,BIGWARN=R2ON?100*1024*1024:50*1024*1024,CQ=cloudQuota(),used=cloudUsed(),free=CQ-used,big=list.filter(p=>p.file.size>BIGWARN),chMo=Math.round(CH/1048576),bwMo=Math.round(BIGWARN/1048576);
+  const li=a=>'<ul class="bigl">'+a.map(p=>'<li>'+thumbOf({kind:'file',name:p.name,mime:p.type})+'<span>'+esc(p.name)+'</span><b>'+fmtSize(p.file.size)+(p.file.size>CH?' · '+Math.ceil(p.file.size/CH)+' morceaux':'')+'</b></li>').join('')+'</ul>';
   const head=(ic,col,t)=>'<div class="mh"><div class="cfi" style="background:'+col+'22;color:'+col+'">'+sv(ic)+'</div><h3 style="padding-top:8px">'+t+'</h3></div>';
   if(total>free){await askDlg(head(WARN,'#ff4d4d','Pas assez de place')+'<p class="sub" style="display:block;font-size:15px;margin:0">'+(list.length>1?'Ces fichiers pèsent':'Ce fichier pèse')+' <b style="color:var(--ink)">'+fmtSize(total)+'</b>, mais il ne reste que <b style="color:var(--ink)">'+fmtSize(Math.max(0,free))+'</b> sur le stockage du site. L’envoi échouerait.</p>'+li(list)+stgHTML(total,'Si tu l’envoyais')+'<p class="sub" style="display:block;margin:0">Libère de la place en supprimant d’anciens fichiers, ou augmente le stockage (voir le README).</p>',null,'Compris');return}
-  const after=(used+total)/QUOTA;
+  const after=(used+total)/CQ;
   if(big.length||after>=0.8){
-    const msg=(big.length?(big.length>1?big.length+' fichiers dépassent':'Ce fichier dépasse')+' 50 Mo. '+(big.length>1?'Ils seront découpés':'Il sera découpé')+' en morceaux de 45 Mo puis recollé'+(big.length>1?'s':'')+' au téléchargement. L’envoi peut prendre plusieurs minutes : garde cette page ouverte.':'')+
+    const msg=(big.length?(big.length>1?big.length+' fichiers dépassent':'Ce fichier dépasse')+' '+bwMo+' Mo. '+(big.some(p=>p.file.size>CH)?(big.length>1?'Ils seront découpés':'Il sera découpé')+' en morceaux de '+chMo+' Mo puis recollé'+(big.length>1?'s':'')+' au téléchargement. ':'')+'L’envoi peut prendre plusieurs minutes : garde cette page ouverte.':'')+
       (after>=0.8?' Après cet envoi, le stockage du site sera rempli à <b style="color:var(--ink)">'+Math.floor(after*100)+' %</b>.':'')+' Il restera <b style="color:var(--ink)">'+fmtSize(free-total)+'</b>.';
     if(!(await askDlg(head(WARN,'#f5b942',big.length?'Gros fichier : continuer ?':'Le stockage se remplit')+'<p class="sub" style="display:block;font-size:15px;margin:0">'+msg+'</p>'+li(big.length?big:list)+stgHTML(total,'Après l’envoi'),'Continuer l’import')))return;
   }
   XF.on=true;let doneAll=0,ok=0,cancelled=false;const t0=performance.now();
-  for(let qi=0;qi<list.length&&!cancelled;qi++){const p=list[qi],size=p.file.size,n=Math.max(1,Math.ceil(size/CHUNK)),ext=(extOf(p.name)||'bin').replace(/[^a-z0-9]/g,'').slice(0,8)||'bin';
-    const base=me+'/cloud/'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext,sent=[],th=thumbOf({kind:'file',name:p.name,mime:p.type});let done=0;
+  for(let qi=0;qi<list.length&&!cancelled;qi++){const p=list[qi],size=p.file.size,n=Math.max(1,Math.ceil(size/CH)),ext=(extOf(p.name)||'bin').replace(/[^a-z0-9]/g,'').slice(0,8)||'bin';
+    const base=(R2ON?'r2:':'')+me+'/cloud/'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext,sent=[],th=thumbOf({kind:'file',name:p.name,mime:p.type});let done=0;
     try{
-      for(let i=0;i<n;i++){const part=n>1?p.file.slice(i*CHUNK,Math.min(size,(i+1)*CHUNK)):p.file,path=n>1?base+'.p'+i:base;
+      for(let i=0;i<n;i++){const part=n>1?p.file.slice(i*CH,Math.min(size,(i+1)*CH)):p.file,path=n>1?base+'.p'+i:base;
         await xhrUpload(path,part,n>1?'application/octet-stream':p.type,loaded=>{const b=done+loaded,pct=b/size*100,all=doneAll+b;
           xfShow({thumb:th,cancel:true,pct,stg:stgHTML(all,'Stockage du site pendant l’envoi'),title:'Envoi de « '+p.name+' » vers « '+where+' »',
             detail:fmtSize(b)+' sur '+fmtSize(size)+' ('+Math.floor(pct)+' %)'+(n>1?' · morceau '+(i+1)+' sur '+n:'')+(list.length>1?' · fichier '+(qi+1)+' sur '+list.length+' ('+Math.floor(all/total*100)+' % au total)':'')+(speed(all,t0)?' · '+speed(all,t0):'')+(eta(all,total,t0)?' · '+eta(all,total,t0):'')})});
@@ -993,7 +1055,7 @@ async function cloudUpload(files){
       const r=chk(await sb.from('cloud_items').insert({owner:me,category_id:cid,parent_id:dir,kind:'file',name:uniqName(p.name,dir||''),path:n>1?base+'#'+n:base,mime:p.type,size}).select().single());
       CLOUD.push(r.data);ok++;doneAll+=size;paintCloud();
     }catch(err){
-      if(sent.length)sb.storage.from(BUCKET).remove(sent).catch(()=>{});
+      if(sent.length)removePaths(sent).catch(()=>{});
       if(err&&err.message==='__abort'){cancelled=true}else{XF.on=false;XF.abort=null;await fetchUsage();xfDone('Échec de l’envoi de « '+p.name+' »',frErr(err),'err',stgHTML(0));reload();return}
     }}
   XF.on=false;XF.abort=null;reload();await fetchUsage();
@@ -1006,8 +1068,8 @@ async function cdownload(x){
   XF.on=true;const ac=new AbortController();XF.abort=()=>ac.abort();
   xfShow({thumb:th,cancel:true,pct:null,title:'Téléchargement de « '+x.name+' »',detail:'Préparation du lien sécurisé…'});
   try{
-    const {data,error}=await sb.storage.from(BUCKET).createSignedUrls(parts,3600);if(error)throw error;
-    const urls=parts.map(p=>{const d=(data||[]).find(z=>z.path===p);if(!d||!d.signedUrl)throw {message:'Lien introuvable'};return d.signedUrl});
+    const lm=await getUrls(parts,3600);
+    const urls=parts.map(p=>{if(!lm[p])throw {message:isR2(p)&&!R2ON?'Ce fichier est sur Cloudflare, mais le Worker n’est pas configuré (config.js).':'Lien introuvable'};return lm[p]});
     const chunks=[];let got=0;
     for(let i=0;i<urls.length;i++){const res=await fetch(urls[i],{signal:ac.signal});if(!res.ok)throw {message:'Erreur '+res.status};
       const rd=res.body.getReader();for(;;){const {done,value}=await rd.read();if(done)break;chunks.push(value);got+=value.length;
@@ -1040,7 +1102,7 @@ document.addEventListener('drop',e=>{if(!dragId)return;const t=e.target.closest&
   run(async()=>chk(await sb.from('cloud_items').update({parent_id:dir||null,name,updated_at:new Date().toISOString()}).eq('id',x.id)))});
 async function previewDlg(x){
   const t=ftype(x),big=partsOf(x).length>1;let url=null,body;
-  if(!big&&['image','video','audio','doc'].includes(t)){url=URLS[x.path];if(!url){try{const {data}=await sb.storage.from(BUCKET).createSignedUrl(x.path,6*3600);url=data&&data.signedUrl;if(url)URLS[x.path]=url}catch(e){}}}
+  if(!big&&['image','video','audio','doc'].includes(t)){url=URLS[x.path];if(!url){try{const lm=await getUrls([x.path]);url=lm[x.path];if(url)URLS[x.path]=url}catch(e){}}}
   const m=x.mime||'';
   if(url&&t==='image')body='<img class="pv" alt="" src="'+esc(url)+'">';
   else if(url&&t==='video')body='<video class="pv" controls src="'+esc(url)+'"></video>';
@@ -1063,14 +1125,14 @@ function moveDlg(x){
 }
 function cdelete(x){
   if(x.kind==='file'){confirmDlg('Supprimer ce fichier ?','« '+x.name+' » ('+fmtSize(+x.size||0)+') sera supprimé définitivement pour toute l’équipe.','Supprimer',()=>{
-    CLOUD=CLOUD.filter(c=>c.id!==x.id);paintCloud();run(async()=>{chk(await sb.from('cloud_items').delete().eq('id',x.id));const ps=partsOf(x);if(ps.length)await sb.storage.from(BUCKET).remove(ps)})});return}
+    CLOUD=CLOUD.filter(c=>c.id!==x.id);paintCloud();run(async()=>{chk(await sb.from('cloud_items').delete().eq('id',x.id));const ps=partsOf(x);if(ps.length)await removePaths(ps)})});return}
   const ds=descendants(x.id);
   if(ds.some(d=>d.owner!==me)){toast('Ce dossier contient des éléments d’autres personnes : ils doivent d’abord les déplacer ou les supprimer.');return}
   confirmDlg('Supprimer ce dossier ?','« '+x.name+' »'+(ds.length?' et ses '+ds.length+' élément'+(ds.length>1?'s':''):'')+' seront supprimés définitivement pour toute l’équipe.','Supprimer',()=>{
     const dep=new Map([x,...ds].map(a=>[a.id,cloudTrail(a.id).length]));const all=[x,...ds].sort((a,b)=>dep.get(b.id)-dep.get(a.id));
     const ids=new Set(all.map(a=>a.id)),paths=all.flatMap(a=>partsOf(a));
     CLOUD=CLOUD.filter(c=>!ids.has(c.id));if(ids.has(cdir))cdir=x.parent_id||'';paintCloud();
-    run(async()=>{for(const a of all)chk(await sb.from('cloud_items').delete().eq('id',a.id));if(paths.length)await sb.storage.from(BUCKET).remove(paths)})});
+    run(async()=>{for(const a of all)chk(await sb.from('cloud_items').delete().eq('id',a.id));if(paths.length)await removePaths(paths)})});
 }
 document.addEventListener('click',ev=>{
   const dc=ev.target.closest('[data-dlgclose]');if(dc&&(dc.tagName==='BUTTON'||ev.target===dc)){closeDlg();return}

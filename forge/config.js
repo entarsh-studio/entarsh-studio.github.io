@@ -5,5 +5,10 @@ window.FORGE_CONFIG = {
   url: "https://nipojbslomagcjpvosnk.supabase.co",
   // Taille du stockage Supabase en Go (1 sur l’offre gratuite, 100 sur l’offre Pro)
   storageGB: 1,
-  anonKey: "sb_publishable_e1s4ftSwoxQBbDCBsJqW_g_-CSRha1K"
+  anonKey: "sb_publishable_e1s4ftSwoxQBbDCBsJqW_g_-CSRha1K",
+  // Cloud sur Cloudflare R2 : colle ici l'adresse de ton Worker (voir README).
+  // Laisse tel quel pour garder le cloud sur Supabase.
+  r2Worker: "https://TON-WORKER.workers.dev",
+  // Taille du stockage R2 en Go (10 gratuits)
+  r2StorageGB: 10
 };

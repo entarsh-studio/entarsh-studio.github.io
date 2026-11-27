@@ -61,6 +61,28 @@ Si tu l'avais déjà lancé avant l'ajout des images de catégorie, lance aussi 
 Lance une fois `maj-stockage.sql` dans **SQL Editor** → **Run** pour que la barre « Stockage du site » affiche le chiffre exact (sinon Forge fait une estimation).
 Si tu passes à l'offre Pro de Supabase, mets `storageGB: 100` dans `config.js`.
 
+## Cloud sur Cloudflare R2 (10 Go gratuits)
+
+Les comptes, tâches, pièces jointes et profils restent sur Supabase ; seuls les **fichiers du cloud** vont sur Cloudflare R2.
+Les fichiers déjà envoyés sur Supabase restent lisibles ; les nouveaux partent sur R2 (morceaux de 90 Mo, jusqu'à 2 Go par fichier).
+
+1. Crée un compte sur <https://dash.cloudflare.com> (gratuit).
+2. Menu **R2 Object Storage** → active R2 (Cloudflare peut demander un moyen de paiement, rien n'est facturé tant qu'on reste sous 10 Go) → **Create bucket** → nom : `forge-cloud` → **Create**.
+3. Menu **Workers & Pages** → **Create** → **Worker** (modèle « Hello World ») → nom : `forge-cloud` → **Deploy**.
+4. **Edit code** → efface tout → colle le contenu de `cloudflare-worker.js` → **Deploy**.
+5. Dans le Worker → **Settings** → **Bindings** → **Add** → **R2 bucket** : nom de la variable `BUCKET`, bucket `forge-cloud`.
+6. **Settings** → **Variables and Secrets** → ajoute :
+   | Nom | Type | Valeur |
+   |---|---|---|
+   | `SUPABASE_URL` | Text | `https://nipojbslomagcjpvosnk.supabase.co` |
+   | `SUPABASE_KEY` | Text | ta clé `sb_publishable_…` |
+   | `ALLOWED_ORIGIN` | Text | `https://entarsh-studio.github.io` |
+   | `SIGN_SECRET` | **Secret** | une longue phrase au hasard (40 caractères ou plus), à ne donner à personne |
+7. Ouvre l'adresse du Worker (`https://forge-cloud.<ton-sous-domaine>.workers.dev`) : tu dois voir `{"ok":true,"service":"forge-cloud"}`.
+8. Mets cette adresse dans `config.js` → `r2Worker: "https://forge-cloud.<ton-sous-domaine>.workers.dev"`.
+
+Sécurité : il faut être connecté à Forge pour envoyer, lister ou demander un lien ; chacun ne peut envoyer ou supprimer que ses propres fichiers ; les liens de lecture sont signés et expirent.
+
 ---
 
 ## Bon à savoir
