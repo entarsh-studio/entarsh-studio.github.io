@@ -1006,7 +1006,7 @@ function stgHTML(extra,label,tgt){
   tgt=tgt||CTGT();const QUOTA=tgt==='r2'?R2QUOTA:window.__Q,exact=tgt==='r2'?USAGE.r2!=null:USAGE.exact;
   const used=tgt==='r2'?(USAGE.r2!=null?USAGE.r2:r2Est()):usedBytes(),add=Math.max(0,extra||0),tot=used+add,p=used/QUOTA*100,pa=Math.min(100-Math.min(100,p),add/QUOTA*100),pt=tot/QUOTA*100,left=QUOTA-tot;
   const cls=pt>=95?' full':pt>=80?' warn':'';
-  return '<div class="stg'+cls+'" role="meter" aria-valuemin="0" aria-valuemax="'+QUOTA+'" aria-valuenow="'+tot+'" aria-label="Stockage du site"><div class="stgh"><span>'+(label||(tgt==='r2'?'Cloud de l’équipe (Cloudflare R2)':'Stockage du site'))+'</span><b>'+fmtSize(tot)+' sur '+fmtSize(QUOTA)+' · '+(pt<1&&tot>0?'moins de 1':Math.floor(pt))+' %</b></div><div class="stgb"><i style="width:'+Math.min(100,p)+'%"></i>'+(add?'<i class="add" style="width:'+pa+'%"></i>':'')+'</div><div class="sub">'+(left>=0?'Il reste '+fmtSize(left):'Dépassement de '+fmtSize(-left))+(exact?'':tgt==='r2'?' (estimation)':' (estimation : lance la mise à jour SQL du stockage pour le chiffre exact)')+'</div></div>'}
+  return '<div class="stg'+cls+'" role="meter" aria-valuemin="0" aria-valuemax="'+QUOTA+'" aria-valuenow="'+tot+'" aria-label="Stockage du site"><div class="stgh"><span>'+(label||(tgt==='r2'?'Cloud de l’équipe (10 Go)':'Stockage du site'))+'</span><b>'+fmtSize(tot)+' sur '+fmtSize(QUOTA)+' · '+(pt<1&&tot>0?'moins de 1':Math.floor(pt))+' %</b></div><div class="stgb"><i style="width:'+Math.min(100,p)+'%"></i>'+(add?'<i class="add" style="width:'+pa+'%"></i>':'')+'</div><div class="sub">'+(left>=0?'Il reste '+fmtSize(left):'Dépassement de '+fmtSize(-left))+(exact?'':tgt==='r2'?' (estimation)':' (estimation : lance la mise à jour SQL du stockage pour le chiffre exact)')+'</div></div>'}
 
 /* ---------- transferts avec barre de progression ---------- */
 const XF={on:false,abort:null};
@@ -1069,7 +1069,7 @@ async function cdownload(x){
   xfShow({thumb:th,cancel:true,pct:null,title:'Téléchargement de « '+x.name+' »',detail:'Préparation du lien sécurisé…'});
   try{
     const lm=await getUrls(parts,3600);
-    const urls=parts.map(p=>{if(!lm[p])throw {message:isR2(p)&&!R2ON?'Ce fichier est sur Cloudflare, mais le Worker n’est pas configuré (config.js).':'Lien introuvable'};return lm[p]});
+    const urls=parts.map(p=>{if(!lm[p])throw {message:isR2(p)&&!R2ON?'Ce fichier est dans le cloud externe, mais le Worker n’est pas configuré (config.js).':'Lien introuvable'};return lm[p]});
     const chunks=[];let got=0;
     for(let i=0;i<urls.length;i++){const res=await fetch(urls[i],{signal:ac.signal});if(!res.ok)throw {message:'Erreur '+res.status};
       const rd=res.body.getReader();for(;;){const {done,value}=await rd.read();if(done)break;chunks.push(value);got+=value.length;

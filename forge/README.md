@@ -61,27 +61,38 @@ Si tu l'avais déjà lancé avant l'ajout des images de catégorie, lance aussi 
 Lance une fois `maj-stockage.sql` dans **SQL Editor** → **Run** pour que la barre « Stockage du site » affiche le chiffre exact (sinon Forge fait une estimation).
 Si tu passes à l'offre Pro de Supabase, mets `storageGB: 100` dans `config.js`.
 
-## Cloud sur Cloudflare R2 (10 Go gratuits)
+## Cloud de 10 Go gratuits, sans carte bancaire (Backblaze B2 + Worker Cloudflare)
 
-Les comptes, tâches, pièces jointes et profils restent sur Supabase ; seuls les **fichiers du cloud** vont sur Cloudflare R2.
-Les fichiers déjà envoyés sur Supabase restent lisibles ; les nouveaux partent sur R2 (morceaux de 90 Mo, jusqu'à 2 Go par fichier).
+Les comptes, tâches, pièces jointes et profils restent sur Supabase ; seuls les **fichiers du cloud** vont chez Backblaze.
+Un petit programme Cloudflare (le « Worker ») vérifie qu'on est connecté à Forge avant chaque envoi.
+Les fichiers déjà envoyés sur Supabase restent lisibles ; les nouveaux partent sur Backblaze (morceaux de 90 Mo, jusqu'à 2 Go par fichier).
 
-1. Crée un compte sur <https://dash.cloudflare.com> (gratuit).
-2. Menu **R2 Object Storage** → active R2 (Cloudflare peut demander un moyen de paiement, rien n'est facturé tant qu'on reste sous 10 Go) → **Create bucket** → nom : `forge-cloud` → **Create**.
-3. Menu **Workers & Pages** → **Create** → **Worker** (modèle « Hello World ») → nom : `forge-cloud` → **Deploy**.
-4. **Edit code** → efface tout → colle le contenu de `cloudflare-worker.js` → **Deploy**.
-5. Dans le Worker → **Settings** → **Bindings** → **Add** → **R2 bucket** : nom de la variable `BUCKET`, bucket `forge-cloud`.
-6. **Settings** → **Variables and Secrets** → ajoute :
+### A. Backblaze B2 (le stockage)
+1. Crée un compte sur <https://www.backblaze.com/sign-up/cloud-storage> (pas de carte). Choisis la région **EU Central** si on te la propose.
+2. **B2 Cloud Storage** → **Buckets** → **Create a Bucket** : un nom unique (ex. `forge-cloud-entarsh`), **Private** → **Create**.
+3. Note l'**Endpoint** affiché sur le bucket (ex. `s3.eu-central-003.backblazeb2.com`) : la partie `eu-central-003` est la région.
+4. **Application Keys** → **Add a New Application Key** : nom `forge`, accès au bucket `forge-cloud-entarsh`, **Read and Write** → **Create**.
+   Note le **keyID** et l'**applicationKey** (affichée une seule fois).
+
+### B. Le Worker Cloudflare (le gardien)
+1. Sur <https://dash.cloudflare.com> : **Compute** → **Workers & Pages** → **Create** → **Worker** (« Hello World ») → nom `forge-cloud` → **Deploy**.
+2. **Edit code** → efface tout → colle `cloudflare-worker.js` → **Deploy**.
+3. **Settings** → **Variables and Secrets** → ajoute :
    | Nom | Type | Valeur |
    |---|---|---|
    | `SUPABASE_URL` | Text | `https://nipojbslomagcjpvosnk.supabase.co` |
    | `SUPABASE_KEY` | Text | ta clé `sb_publishable_…` |
    | `ALLOWED_ORIGIN` | Text | `https://entarsh-studio.github.io` |
-   | `SIGN_SECRET` | **Secret** | une longue phrase au hasard (40 caractères ou plus), à ne donner à personne |
-7. Ouvre l'adresse du Worker (`https://forge-cloud.<ton-sous-domaine>.workers.dev`) : tu dois voir `{"ok":true,"service":"forge-cloud"}`.
-8. Mets cette adresse dans `config.js` → `r2Worker: "https://forge-cloud.<ton-sous-domaine>.workers.dev"`.
+   | `SIGN_SECRET` | **Secret** | une longue phrase au hasard, à garder pour toi |
+   | `B2_ENDPOINT` | Text | `https://` + l'Endpoint du bucket |
+   | `B2_REGION` | Text | la région (ex. `eu-central-003`) |
+   | `B2_BUCKET` | Text | le nom du bucket |
+   | `B2_KEY_ID` | Text | le keyID |
+   | `B2_APP_KEY` | **Secret** | l'applicationKey |
+4. Ouvre l'adresse du Worker : tu dois voir `{"ok":true,"service":"forge-cloud","storage":"Backblaze B2"}`.
+5. Mets cette adresse dans `config.js` → `r2Worker: "https://forge-cloud.<ton-sous-domaine>.workers.dev"`.
 
-Sécurité : il faut être connecté à Forge pour envoyer, lister ou demander un lien ; chacun ne peut envoyer ou supprimer que ses propres fichiers ; les liens de lecture sont signés et expirent.
+Limites gratuites à connaître : 10 Go chez Backblaze ; environ 2 500 lectures de fichiers par jour (téléchargements, miniatures) avant que Backblaze bloque jusqu'au lendemain ; 100 000 requêtes par jour pour le Worker. Sans carte enregistrée, rien ne peut être facturé : au pire, ça s'arrête jusqu'au lendemain.
 
 ---
 
