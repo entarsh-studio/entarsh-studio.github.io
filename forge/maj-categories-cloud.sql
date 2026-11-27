@@ -54,3 +54,18 @@ create policy "cloud_suppr"    on public.cloud_items for delete to authenticated
 
 -- ---------- Temps réel ----------
 alter publication supabase_realtime add table public.categories, public.cloud_items;
+
+-- ---------- Stockage du site (barre de stockage dans Forge) ----------
+create or replace function public.storage_usage()
+returns bigint
+language sql
+stable
+security definer
+set search_path = public, storage
+as $$
+  select coalesce(sum((metadata->>'size')::bigint), 0)::bigint
+  from storage.objects
+  where bucket_id = 'pieces-jointes';
+$$;
+revoke all on function public.storage_usage() from public, anon;
+grant execute on function public.storage_usage() to authenticated;

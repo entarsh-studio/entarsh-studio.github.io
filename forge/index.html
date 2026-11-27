@@ -299,6 +299,22 @@ label.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
 .mvl button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mvl button:hover{background:var(--raise)}
 .mvl button.on{background:var(--redbg);color:#fff;font-weight:700}
+/* stockage */
+.stg{display:grid;gap:6px}
+.stgh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--mute)}
+.stgh b{color:var(--ink);font-weight:600}
+.stgb{height:10px;border-radius:99px;background:#2c3039;overflow:hidden;display:flex}
+.stgb i{display:block;height:100%;background:#4da3ff}
+.stgb i.add{background:repeating-linear-gradient(45deg,#ff7a5c 0 6px,#ff4d4d 6px 12px)}
+.stg.warn .stgb i:first-child{background:var(--amber)}.stg.full .stgb i:first-child{background:var(--red)}
+.stg .sub{font-size:13px}
+.xfoot{display:grid;gap:10px}
+.xfer .stg{border-top:1px solid var(--line);padding-top:10px}
+.bigl{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.bigl li{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.bigl li .cth{width:36px;height:36px}.bigl li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.bigl li b{white-space:nowrap;font-size:14px;color:var(--mute)}
+.backb{min-height:44px;display:inline-flex;align-items:center;gap:6px}
 /* transferts */
 .xfer{position:fixed;right:20px;bottom:20px;z-index:45;width:min(420px,calc(100vw - 24px));background:var(--raise);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 50px -12px #000;padding:14px 16px;display:grid;gap:10px}
 .xfer[hidden]{display:none}
@@ -401,7 +417,7 @@ label.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
     <div class="xp" id="xp">
       <div class="xtool">
         <button type="button" class="ghost xi ttog" id="ctreeb" aria-label="Afficher l’arborescence" aria-expanded="false"></button>
-        <button type="button" class="ghost xi" id="cupb" aria-label="Dossier parent"></button>
+        <button type="button" class="ghost backb" id="cupb" hidden></button>
         <div class="crumbs" id="crumbs" role="navigation" aria-label="Dossier courant"></div>
         <div class="seg" id="cviewseg" role="group" aria-label="Affichage"></div>
         <button type="button" class="ghost" id="cnewf"></button>
@@ -752,7 +768,7 @@ async function loadAll(){
   for(const k in PR)delete PR[k];p.data.forEach(r=>PR[r.id]=r);LISTS=l.data;TASKS=t.data;
   if(!PR[me]){const meta=(session.user.user_metadata||{});const row={id:me,pseudo:String(meta.pseudo||'').slice(0,30),icon:'gamedesign',color:'#ff4d4d'};
     const r=await sb.from('profiles').upsert(row).select().single();if(!r.error)PR[me]=r.data}
-  await signAll().catch(()=>{});
+  await Promise.all([signAll().catch(()=>{}),fetchUsage()]);
   loaded=true;$('status').textContent='';applyProfileMusic();render();
 }
 let rt;const reload=()=>{clearTimeout(rt);rt=setTimeout(()=>loadAll().catch(e=>toast(frErr(e))),200)};
@@ -818,7 +834,10 @@ function paintCbar(){
 
 /* boîtes de dialogue */
 function openDlg(html,wide){$('dlg').innerHTML='<div class="ov" data-dlgclose="1"><div class="modal'+(wide?' wide':'')+'" role="dialog" aria-modal="true">'+html+'</div></div>';return $('dlg').querySelector('.modal')}
-function closeDlg(){$('dlg').innerHTML=''}
+let dlgRes=null;
+function closeDlg(){$('dlg').innerHTML='';if(dlgRes){const r=dlgRes;dlgRes=null;r(false)}}
+function askDlg(html,okLabel,cancelLabel){return new Promise(res=>{closeDlg();const m=openDlg(html+'<div class="acts" style="justify-content:flex-end;flex-wrap:wrap"><button type="button" class="'+(okLabel?'ghost':'btn')+'" id="aqno">'+(cancelLabel||'Annuler')+'</button>'+(okLabel?'<button type="button" class="btn" id="aqok">'+okLabel+'</button>':'')+'</div>');dlgRes=res;
+  $('aqno').onclick=()=>closeDlg();if(okLabel){$('aqok').onclick=()=>{dlgRes=null;$('dlg').innerHTML='';res(true)};$('aqok').focus()}else $('aqno').focus()})}
 function confirmDlg(title,text,ok,fn){
   const m=openDlg('<div class="cfi" style="background:var(--redbg);color:#ff8080">'+sv(P.trash)+'</div><h3></h3><p class="sub" style="font-size:15px;margin:0"></p><div class="acts" style="justify-content:flex-end;flex-wrap:wrap"><button type="button" class="ghost" data-dlgclose="1">Annuler</button><button type="button" class="btn" id="dok"></button></div>');
   m.querySelector('h3').textContent=title;m.querySelector('p').textContent=text;$('dok').textContent=ok;$('dok').onclick=()=>{closeDlg();fn()};$('dok').focus()}
@@ -895,7 +914,7 @@ function paintCloud(){
   if(cdir&&!CLOUD.some(x=>x.id===cdir&&inCat(x)))cdir='';
   const trail=cloudTrail(cdir);
   $('crumbs').innerHTML='<button type="button" data-cdir="" data-dropdir="">'+sv(P.cloud)+'<span>'+esc(catName(cat))+'</span></button>'+trail.map(x=>'<span class="sep" aria-hidden="true">›</span><button type="button" data-cdir="'+esc(x.id)+'" data-dropdir="'+esc(x.id)+'"><span>'+esc(x.name)+'</span></button>').join('');
-  $('cupb').innerHTML=sv(UPI);$('cupb').disabled=!cdir;
+  $('cupb').innerHTML=sv('<path d="M15 18l-6-6 6-6"/>')+'<span>Retour</span>';$('cupb').hidden=!cdir;$('cupb').title=cdir?'Revenir à « '+((cloudTrail(cdir).slice(-2,-1)[0]||{}).name||catName(cat))+' »':'';
   $('ctreeb').innerHTML=sv(TREE);$('ctreeb').setAttribute('aria-expanded',ctreeOn);$('xp').classList.toggle('treeon',ctreeOn);
   $('cviewseg').innerHTML=[['list',LISTI,'Liste'],['grid',GRIDI,'Grandes icônes']].map(([v,ic,l])=>'<button type="button" data-cv="'+v+'" class="'+(cview===v?'on':'')+'" aria-pressed="'+(cview===v)+'" title="'+l+'" aria-label="'+l+'">'+sv(ic)+'</button>').join('');
   const off=!v2||!loaded;$('cnewf').disabled=off;$('cupl').classList.toggle('dis',off);
@@ -915,15 +934,27 @@ function paintCloud(){
   else $('cloud').innerHTML='<div class="chead"><span></span><span>Nom</span><span>Taille</span><span>Ajouté par</span><span>Modifié</span><span></span></div>'+kids.map((x,i)=>{const id=esc(x.id),f=x.kind==='folder',up=kids.length>4&&i>=kids.length-2;
       return '<div class="crow"'+(x.owner===me?' draggable="true" data-drag="'+id+'"':'')+(f?' data-dropdir="'+id+'"':'')+'>'+thumbOf(x)+'<button type="button" class="tb" data-copen="'+id+'" title="'+esc(x.name)+'"><div class="tt">'+esc(x.name)+'</div><div class="sub">'+meta(x)+' · '+esc(nm(x.owner))+' · '+fmtDate(x.updated_at||x.created_at)+'</div></button><span class="csz">'+(f?meta(x):fmtSize(+x.size||0))+'</span><span class="cby">'+esc(nm(x.owner))+'</span><span class="cdt">'+fmtDate(x.updated_at||x.created_at)+'</span><button type="button" class="del" data-cmenu="'+id+'" aria-label="Actions" aria-haspopup="menu" aria-expanded="'+(cmenu===x.id)+'">'+sv(DOTS)+'</button>'+menu(x,up)+'</div>'}).join('');
   const tot=CLOUD.filter(x=>inCat(x)&&x.kind==='file'),fo=kids.filter(x=>x.kind==='folder').length,fi=kids.length-fo;
-  $('cstat').textContent=(fo?fo+' dossier'+(fo>1?'s':'')+' · ':'')+fi+' fichier'+(fi>1?'s':'')+' ici · '+tot.length+' fichier'+(tot.length>1?'s':'')+' et '+fmtSize(tot.reduce((a,x)=>a+(+x.size||0),0))+' dans la catégorie';
+  $('cstat').innerHTML=stgHTML(0)+'<span>'+esc((fo?fo+' dossier'+(fo>1?'s':'')+' · ':'')+fi+' fichier'+(fi>1?'s':'')+' ici · '+tot.length+' fichier'+(tot.length>1?'s':'')+' et '+fmtSize(tot.reduce((a,x)=>a+(+x.size||0),0))+' dans la catégorie')+'</span>';
 }
+
+/* ---------- stockage du site ---------- */
+const QUOTA=Math.round((+CFG.storageGB||1)*1024*1024*1024),BIGWARN=50*1024*1024;
+const USAGE={bytes:null,exact:false};
+const estUsage=()=>CLOUD.reduce((a,x)=>a+(x.kind==='file'?(+x.size||0):0),0)+TASKS.reduce((a,t)=>a+(Array.isArray(t.files)?t.files.reduce((b,f)=>b+(+(f&&f.size)||0),0):0),0);
+const usedBytes=()=>USAGE.bytes!=null?USAGE.bytes:estUsage();
+async function fetchUsage(){try{const r=await sb.rpc('storage_usage');if(!r.error&&r.data!=null){USAGE.bytes=+r.data;USAGE.exact=true}else{USAGE.bytes=null;USAGE.exact=false}}catch(e){USAGE.bytes=null;USAGE.exact=false}}
+function stgHTML(extra,label){
+  const used=usedBytes(),add=Math.max(0,extra||0),tot=used+add,p=used/QUOTA*100,pa=Math.min(100-Math.min(100,p),add/QUOTA*100),pt=tot/QUOTA*100,left=QUOTA-tot;
+  const cls=pt>=95?' full':pt>=80?' warn':'';
+  return '<div class="stg'+cls+'" role="meter" aria-valuemin="0" aria-valuemax="'+QUOTA+'" aria-valuenow="'+tot+'" aria-label="Stockage du site"><div class="stgh"><span>'+(label||'Stockage du site')+'</span><b>'+fmtSize(tot)+' sur '+fmtSize(QUOTA)+' · '+(pt<1&&tot>0?'moins de 1':Math.floor(pt))+' %</b></div><div class="stgb"><i style="width:'+Math.min(100,p)+'%"></i>'+(add?'<i class="add" style="width:'+pa+'%"></i>':'')+'</div><div class="sub">'+(left>=0?'Il reste '+fmtSize(left):'Dépassement de '+fmtSize(-left))+(USAGE.exact?'':' (estimation : lance la mise à jour SQL du stockage pour le chiffre exact)')+'</div></div>'}
 
 /* ---------- transferts avec barre de progression ---------- */
 const XF={on:false,abort:null};
 function xfShow(o){const el=$('xfer');el.hidden=false;el.className='xfer'+(o.state?' '+o.state:'');
   el.innerHTML='<div class="xh">'+(o.thumb||'')+'<b id="xft"></b>'+(o.cancel?'<button type="button" class="ghost" id="xfc">Annuler</button>':'')+'</div><div class="xbar'+(o.pct==null?' ind':'')+'" role="progressbar" aria-valuemin="0" aria-valuemax="100"'+(o.pct==null?'':' aria-valuenow="'+Math.round(o.pct)+'"')+'><i style="width:'+(o.pct==null?35:Math.max(2,o.pct))+'%"></i></div><div class="xd" id="xfd"></div>';
+  if(o.stg)el.insertAdjacentHTML('beforeend',o.stg);
   $('xft').textContent=o.title;$('xfd').textContent=o.detail;if(o.cancel)$('xfc').onclick=()=>{XF.abort&&XF.abort()}}
-function xfDone(title,detail,state){xfShow({title,detail,pct:100,state:state||'ok'});clearTimeout(XF.t);XF.t=setTimeout(()=>{if(!XF.on)$('xfer').hidden=true},state==='err'?6000:3200)}
+function xfDone(title,detail,state,stg){xfShow({title,detail,pct:100,state:state||'ok',stg});clearTimeout(XF.t);XF.t=setTimeout(()=>{if(!XF.on)$('xfer').hidden=true},state==='err'?7000:stg?6000:3200)}
 const speed=(b,t0)=>{const s=(performance.now()-t0)/1000;return s>.5?fmtSize(Math.round(b/s))+'/s':''};
 const eta=(b,tot,t0)=>{const s=(performance.now()-t0)/1000;if(s<1||!b)return '';const r=(tot-b)/(b/s);return r<60?'environ '+Math.max(1,Math.round(r))+' s restantes':'environ '+Math.round(r/60)+' min restantes'};
 function xhrUpload(path,blob,type,onp){return new Promise((res,rej)=>{const x=new XMLHttpRequest();XF.abort=()=>x.abort();
@@ -938,13 +969,24 @@ async function cloudUpload(files){
     const name=f.name&&f.name!=='image.png'?f.name:'capture-'+new Date().toLocaleString('fr-FR').replace(/[/: ]/g,'-').replace(/,/g,'')+'.png';list.push({file:f,name:name.slice(0,120),type:f.type||'application/octet-stream'})}
   if(!list.length)return;
   const dir=cdir||null,cid=cat||null,where=dir?(CLOUD.find(c=>c.id===dir)||{}).name:catName(cat),total=list.reduce((a,p)=>a+p.file.size,0);
+  await fetchUsage();
+  const used=usedBytes(),free=QUOTA-used,big=list.filter(p=>p.file.size>BIGWARN);
+  const li=a=>'<ul class="bigl">'+a.map(p=>'<li>'+thumbOf({kind:'file',name:p.name,mime:p.type})+'<span>'+esc(p.name)+'</span><b>'+fmtSize(p.file.size)+(p.file.size>CHUNK?' · '+Math.ceil(p.file.size/CHUNK)+' morceaux':'')+'</b></li>').join('')+'</ul>';
+  const head=(ic,col,t)=>'<div class="mh"><div class="cfi" style="background:'+col+'22;color:'+col+'">'+sv(ic)+'</div><h3 style="padding-top:8px">'+t+'</h3></div>';
+  if(total>free){await askDlg(head(WARN,'#ff4d4d','Pas assez de place')+'<p class="sub" style="display:block;font-size:15px;margin:0">'+(list.length>1?'Ces fichiers pèsent':'Ce fichier pèse')+' <b style="color:var(--ink)">'+fmtSize(total)+'</b>, mais il ne reste que <b style="color:var(--ink)">'+fmtSize(Math.max(0,free))+'</b> sur le stockage du site. L’envoi échouerait.</p>'+li(list)+stgHTML(total,'Si tu l’envoyais')+'<p class="sub" style="display:block;margin:0">Libère de la place en supprimant d’anciens fichiers, ou augmente le stockage (voir le README).</p>',null,'Compris');return}
+  const after=(used+total)/QUOTA;
+  if(big.length||after>=0.8){
+    const msg=(big.length?(big.length>1?big.length+' fichiers dépassent':'Ce fichier dépasse')+' 50 Mo. '+(big.length>1?'Ils seront découpés':'Il sera découpé')+' en morceaux de 45 Mo puis recollé'+(big.length>1?'s':'')+' au téléchargement. L’envoi peut prendre plusieurs minutes : garde cette page ouverte.':'')+
+      (after>=0.8?' Après cet envoi, le stockage du site sera rempli à <b style="color:var(--ink)">'+Math.floor(after*100)+' %</b>.':'')+' Il restera <b style="color:var(--ink)">'+fmtSize(free-total)+'</b>.';
+    if(!(await askDlg(head(WARN,'#f5b942',big.length?'Gros fichier : continuer ?':'Le stockage se remplit')+'<p class="sub" style="display:block;font-size:15px;margin:0">'+msg+'</p>'+li(big.length?big:list)+stgHTML(total,'Après l’envoi'),'Continuer l’import')))return;
+  }
   XF.on=true;let doneAll=0,ok=0,cancelled=false;const t0=performance.now();
   for(let qi=0;qi<list.length&&!cancelled;qi++){const p=list[qi],size=p.file.size,n=Math.max(1,Math.ceil(size/CHUNK)),ext=(extOf(p.name)||'bin').replace(/[^a-z0-9]/g,'').slice(0,8)||'bin';
     const base=me+'/cloud/'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext,sent=[],th=thumbOf({kind:'file',name:p.name,mime:p.type});let done=0;
     try{
       for(let i=0;i<n;i++){const part=n>1?p.file.slice(i*CHUNK,Math.min(size,(i+1)*CHUNK)):p.file,path=n>1?base+'.p'+i:base;
         await xhrUpload(path,part,n>1?'application/octet-stream':p.type,loaded=>{const b=done+loaded,pct=b/size*100,all=doneAll+b;
-          xfShow({thumb:th,cancel:true,pct,title:'Envoi de « '+p.name+' » vers « '+where+' »',
+          xfShow({thumb:th,cancel:true,pct,stg:stgHTML(all,'Stockage du site pendant l’envoi'),title:'Envoi de « '+p.name+' » vers « '+where+' »',
             detail:fmtSize(b)+' sur '+fmtSize(size)+' ('+Math.floor(pct)+' %)'+(n>1?' · morceau '+(i+1)+' sur '+n:'')+(list.length>1?' · fichier '+(qi+1)+' sur '+list.length+' ('+Math.floor(all/total*100)+' % au total)':'')+(speed(all,t0)?' · '+speed(all,t0):'')+(eta(all,total,t0)?' · '+eta(all,total,t0):'')})});
         sent.push(path);done+=part.size}
       xfShow({thumb:th,pct:null,title:'Enregistrement de « '+p.name+' »',detail:'Fichier envoyé, ajout dans le cloud de l’équipe…'});
@@ -952,11 +994,11 @@ async function cloudUpload(files){
       CLOUD.push(r.data);ok++;doneAll+=size;paintCloud();
     }catch(err){
       if(sent.length)sb.storage.from(BUCKET).remove(sent).catch(()=>{});
-      if(err&&err.message==='__abort'){cancelled=true}else{XF.on=false;xfDone('Échec de l’envoi de « '+p.name+' »',frErr(err),'err');reload();return}
+      if(err&&err.message==='__abort'){cancelled=true}else{XF.on=false;XF.abort=null;await fetchUsage();xfDone('Échec de l’envoi de « '+p.name+' »',frErr(err),'err',stgHTML(0));reload();return}
     }}
-  XF.on=false;XF.abort=null;reload();
-  if(cancelled)xfDone('Envoi annulé',ok?ok+' fichier'+(ok>1?'s':'')+' envoyé'+(ok>1?'s':'')+' avant l’annulation.':'Aucun fichier n’a été ajouté.','err');
-  else xfDone(ok>1?ok+' fichiers ajoutés au cloud':'Fichier ajouté au cloud',fmtSize(total)+' envoyés vers « '+where+' » en '+Math.max(1,Math.round((performance.now()-t0)/1000))+' s.');
+  XF.on=false;XF.abort=null;reload();await fetchUsage();
+  if(cancelled)xfDone('Envoi annulé',ok?ok+' fichier'+(ok>1?'s':'')+' envoyé'+(ok>1?'s':'')+' avant l’annulation.':'Aucun fichier n’a été ajouté.','err',stgHTML(0));
+  else xfDone(ok>1?ok+' fichiers ajoutés au cloud':'Fichier ajouté au cloud',fmtSize(total)+' envoyés vers « '+where+' » en '+Math.max(1,Math.round((performance.now()-t0)/1000))+' s.','ok',stgHTML(0));
 }
 async function cdownload(x){
   if(XF.on){toast('Un transfert est déjà en cours.');return}

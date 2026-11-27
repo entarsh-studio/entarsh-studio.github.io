@@ -56,6 +56,11 @@ Si tu l'avais déjà lancé avant l'ajout des images de catégorie, lance aussi 
   Tout le monde voit, ouvre et télécharge tout ; seul l'auteur d'un fichier ou d'un dossier peut le renommer, le déplacer ou le supprimer.
   L'offre gratuite de Supabase donne 1 Go de stockage au total (pièces jointes + cloud).
 
+## Mise à jour : barre de stockage
+
+Lance une fois `maj-stockage.sql` dans **SQL Editor** → **Run** pour que la barre « Stockage du site » affiche le chiffre exact (sinon Forge fait une estimation).
+Si tu passes à l'offre Pro de Supabase, mets `storageGB: 100` dans `config.js`.
+
 ---
 
 ## Bon à savoir
