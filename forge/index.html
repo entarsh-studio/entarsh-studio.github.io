@@ -1269,7 +1269,7 @@ function renderModal(){
 async function signAll(){
   const need=new Set();
   for(const t of [...TASKS,...BUGS])for(const f of (Array.isArray(t.files)?t.files:[]))if(f&&f.path&&!URLS[f.path])need.add(f.path);
-  for(const id in PR)if(PR[id].photo&&!URLS[PR[id].photo])need.add(PR[id].photo);
+  for(const id in PR){if(PR[id].photo&&!URLS[PR[id].photo])need.add(PR[id].photo);if(id===me&&PR[id].music&&!URLS[PR[id].music])need.add(PR[id].music)}
   for(const c of CATS)if(c.image&&!URLS[c.image])need.add(c.image);
   if(!need.size)return;
   const {data}=await sb.storage.from(BUCKET).createSignedUrls([...need],6*3600);
