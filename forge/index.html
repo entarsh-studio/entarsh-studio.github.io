@@ -263,9 +263,9 @@ label.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
 .cloudz{position:relative;min-height:320px;padding:8px}
 .cloudz.over::after{content:"Dépose pour importer ici";position:absolute;inset:6px;border:2px dashed var(--red);border-radius:12px;background:rgba(58,22,24,.9);display:grid;place-items:center;font-weight:700;font-size:18px;color:#fff;z-index:6}
 .dropon{outline:2px dashed var(--red)!important;outline-offset:-2px;background:var(--redbg)!important}
-.chead,.crow{display:grid;grid-template-columns:44px minmax(0,1fr) 96px 130px 112px 40px;gap:4px 12px;align-items:center}
+.chead,.crow{display:grid;grid-template-columns:28px 44px minmax(0,1fr) 96px 130px 112px 40px;gap:4px 12px;align-items:center}
 .chead{padding:4px 10px 8px;font-size:13px;font-weight:700;color:var(--mute);border-bottom:1px solid var(--line)}
-.chead span:nth-child(3),.crow .csz{text-align:right}
+.chead span:nth-child(4),.crow .csz{text-align:right}
 .crow{padding:6px 10px;border-radius:10px;position:relative}
 .crow:hover{background:#1d2027}
 .crow .csz,.crow .cby,.crow .cdt{font-size:14px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -299,6 +299,48 @@ label.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
 .mvl button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mvl button:hover{background:var(--raise)}
 .mvl button.on{background:var(--redbg);color:#fff;font-weight:700}
+/* sélection multiple */
+.csel{width:28px;height:28px;border-radius:7px;border:2px solid #4a4f5a;background:none;display:grid;place-items:center;padding:0;opacity:.0;transition:opacity .1s}
+.csel svg{width:16px;height:16px;stroke:#fff;stroke-width:3.2;fill:none;opacity:0}
+.crow:hover .csel,.ctile:hover .csel,.csel:focus-visible,.cloudz.selmode .csel{opacity:1}
+.sel .csel{opacity:1;background:var(--red);border-color:var(--red)}.sel .csel svg{opacity:1}
+.crow.sel{background:#2a1a1c!important;box-shadow:inset 3px 0 0 var(--red)}
+.ctile.sel{border-color:var(--red);background:#2a1a1c}
+.ctile .csel{position:absolute;top:8px;left:8px;z-index:2;background:#000a}
+.ctile.sel .csel{background:var(--red)}
+.cselbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#2a1a1c;border-top:1px solid var(--red);position:sticky;bottom:0;z-index:7;box-shadow:0 -10px 30px -12px #000}
+@media(max-width:700px){.cselbar{bottom:64px}}
+.cselbar[hidden]{display:none}
+.cselbar b{flex:1 1 160px;font-weight:700}
+.cselbar .ghost{min-height:40px;display:inline-flex;align-items:center;gap:6px}
+.cselbar .sub{flex-basis:100%;font-size:13px}
+@media(pointer:coarse){.csel{opacity:1}}
+/* fiche tâche */
+.tmod{padding:0;gap:0;width:min(720px,100%);overflow:auto}
+.thd{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:start;padding:22px 22px 18px;background:linear-gradient(180deg,color-mix(in srgb,var(--uc) 22%,transparent),transparent);border-bottom:1px solid var(--line)}
+.thd .ico{width:56px;height:56px;border-radius:14px;background:color-mix(in srgb,var(--uc) 30%,var(--raise));color:#fff}
+.thd .ico svg.i{width:28px;height:28px}
+.tcrumb{font-size:13px;font-weight:600;color:var(--mute);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tcrumb i{font-style:normal;opacity:.6}
+.thd h3{font-size:24px;margin:4px 0 10px;overflow-wrap:anywhere;line-height:1.2}
+.tchips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tstate{font-size:13px;font-weight:700;border-radius:6px;padding:3px 9px;background:var(--raise);color:var(--mute)}
+.tstate.ok{background:#123326;color:#3ecf8e}
+.tbd{padding:20px 22px 22px;display:grid;gap:20px}
+.tppl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.tp{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;min-width:0}
+.tp .av{width:36px;height:36px;flex:none}
+.tp .tpl{font-size:12px;font-weight:700;color:var(--mute);text-transform:none}
+.tp .tpn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp .evr{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#2c3039;color:var(--ink);flex:none}
+.tact{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tact .btn,.tact .ghost{min-height:48px;display:inline-flex;align-items:center;gap:8px;font-size:16px}
+.tact .btn.okb{background:#2f9e6e}
+.tact .sub{flex:1 1 200px}
+.tsec h4{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
+.tsec h4 .n{font-size:12px;background:var(--raise);border-radius:99px;padding:0 8px;color:var(--mute)}
+.tfoot{font-size:13px;color:var(--mute);border-top:1px solid var(--line);padding-top:14px}
+@media(max-width:700px){.thd{padding:18px 16px 14px;gap:12px}.thd .ico{width:46px;height:46px}.thd h3{font-size:20px}.tbd{padding:16px}.tact .btn,.tact .ghost{flex:1 1 auto;justify-content:center}}
 /* recadrage */
 .crop{position:relative;border-radius:12px;overflow:hidden;background:#000}
 .crop canvas{display:block;width:100%;aspect-ratio:1;touch-action:none;cursor:grab}
@@ -344,7 +386,7 @@ label.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
   .xtree{display:none;border-right:0;border-bottom:1px solid var(--line);max-height:46vh}
   .xp.treeon .xtree{display:block}
   .chead{display:none}
-  .crow{grid-template-columns:44px minmax(0,1fr) 40px;padding:8px}
+  .crow{grid-template-columns:28px 44px minmax(0,1fr) 40px;padding:8px}
   .crow .csz,.crow .cby,.crow .cdt{display:none}
   .crow .sub{display:block;font-size:13px}
 }
@@ -429,6 +471,7 @@ label.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
         <label class="btn" id="cupl"></label>
       </div>
       <div class="xbody"><aside class="xtree" id="ctree" aria-label="Arborescence des dossiers"></aside><div class="cloudz" id="cloud"></div></div>
+      <div class="cselbar" id="cselbar" hidden role="region" aria-label="Sélection"></div>
       <div class="xfoot" id="cstat"></div>
     </div>
   </section>
@@ -620,6 +663,7 @@ const allLists=()=>LISTS.map(l=>({...l,key:l.id,uid:l.owner}));
 const allTasks=()=>TASKS.map(t=>({...t,key:t.id,uid:t.owner,who:t.assignee||'',list:t.list_id||'',files:Array.isArray(t.files)?t.files:[]}));
 const findT=k=>allTasks().find(t=>t.key===k);
 const checker=t=>t.who||t.uid;
+const canCheck=t=>!!me&&(t.who?t.who===me:true);
 const doneAt=t=>t.done_at?Date.parse(t.done_at):0;
 const nm=id=>(PR[id]&&PR[id].pseudo&&PR[id].pseudo.trim())||'Sans pseudo';
 function avH(id,px,o){
@@ -642,7 +686,7 @@ const fillNames=(el,files)=>el.querySelectorAll('.fn').forEach((n,i)=>{n.textCon
 function rowsHtml(arr,lists,showList,showCat){
   const lname=k=>{const l=lists.find(x=>x.key===k);return l?l.name:'Sans liste'};
   return '<div class="rows">'+arr.map(t=>{
-    const done=!!doneAt(t),can=checker(t)===me,u=t.urg||3,d=t.diff||1,nf=t.files.length;
+    const done=!!doneAt(t),can=canCheck(t),u=t.urg||3,d=t.diff||1,nf=t.files.length;
     return '<div class="row'+(done?' done':'')+'">'+
     '<button type="button" class="chk'+(done?' on':'')+'" data-c="'+esc(t.key)+'" '+(can?'':'disabled')+' aria-label="'+(done?'Décocher':'Cocher')+'" title="'+(can?'':'Seule la personne concernée peut cocher')+'"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>'+
     '<div class="ico" title="'+esc((IC[t.icon]||IC.liste)[0])+'">'+svg(t.icon)+'</div>'+
@@ -743,14 +787,23 @@ function renderModal(){
   }
   const t=openT&&findT(openT);
   if(!t){openT=null;box.innerHTML='';return}
-  const lists=allLists(),l=lists.find(x=>x.key===t.list),files=t.files,mine=t.uid===me,u=t.urg||3,d=t.diff||1,done=!!doneAt(t);
-  box.innerHTML='<div class="ov" data-close="1"><div class="modal" role="dialog" aria-modal="true">'+
-   '<div class="mh"><div class="ico">'+svg(t.icon)+'</div><h3 id="mtitle"></h3><button type="button" class="del" data-close="1" aria-label="Fermer">'+sv(P.x)+'</button></div>'+
-   '<dl class="kv"><dt>Liste</dt><dd>'+esc(l?l.name:'Sans liste')+'</dd><dt>Délai</dt><dd><span class="chip u'+u+'">'+URG[u]+'</span></dd><dt>Difficulté</dt><dd><span class="dif"><span>'+[1,2,3].map(i=>'<i class="'+(i<=d?'f':'')+'"></i>').join('')+'</span>'+DIFF[d]+'</span></dd>'+
-   '<dt>Pour</dt><dd class="who">'+(t.who?avH(t.who)+esc(nm(t.who)):'Tout le monde')+'</dd><dt>Ajoutée par</dt><dd class="who">'+avH(t.uid)+esc(nm(t.uid))+'</dd><dt>État</dt><dd>'+(done?'Faite':'À faire')+'</dd></dl>'+
-   '<div class="f">Pièces jointes · '+files.length+(files.length?'<div class="files" id="mfiles">'+fileTiles(files,mine,'data-rf')+'</div>':'<div class="sub">Aucune pièce jointe.</div>')+'</div>'+
-   (mine?'<label class="drop" id="mdrop"><input type="file" id="mfile" multiple><b>'+(busy?'Envoi en cours…':'Ajouter des pièces jointes')+'</b>Clique, glisse un fichier, ou colle une capture (Ctrl+V)</label>':'')+
-   '</div></div>';
+  const lists=allLists(),l=lists.find(x=>x.key===t.list),files=t.files,mine=t.uid===me,u=t.urg||3,d=t.diff||1,done=!!doneAt(t),can=canCheck(t);
+  const ucol=['','#ff4d4d','#f5b942','#6b7180'][u],cn=catName(t.category_id);
+  const fmtDT=x=>{try{return new Date(x).toLocaleString('fr-FR',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}};
+  const person=(lab,id,txt)=>'<div class="tp">'+(id?avH(id,36):'<span class="evr">'+sv(P.equipe)+'</span>')+'<div style="min-width:0"><div class="tpl">'+lab+'</div><div class="tpn">'+esc(txt||nm(id))+'</div></div></div>';
+  const doneBy=t.done_by&&PR[t.done_by]?t.done_by:(done&&t.who?t.who:null);
+  box.innerHTML='<div class="ov" data-close="1"><div class="modal tmod" role="dialog" aria-modal="true" aria-labelledby="mtitle">'+
+   '<div class="thd" style="--uc:'+ucol+'"><div class="ico">'+svg(t.icon)+'</div><div style="min-width:0"><div class="tcrumb"><span>'+esc(cn)+'</span><i>›</i><span>'+esc(l?l.name:'Sans liste')+'</span></div><h3 id="mtitle"></h3>'+
+     '<div class="tchips"><span class="tstate'+(done?' ok':'')+'">'+(done?'✓ Faite':'À faire')+'</span><span class="chip u'+u+'">'+URG[u]+'</span><span class="dif"><span>'+[1,2,3].map(i=>'<i class="'+(i<=d?'f':'')+'"></i>').join('')+'</span>'+DIFF[d]+'</span></div></div>'+
+     '<button type="button" class="del" data-close="1" aria-label="Fermer">'+sv(P.x)+'</button></div>'+
+   '<div class="tbd">'+
+     '<div class="tppl">'+person('Pour',t.who,t.who?null:'Tout le monde')+person('Ajoutée par',t.uid)+(done?person('Faite par',doneBy,doneBy?null:'Quelqu’un'):'')+'</div>'+
+     '<div class="tact">'+(can?(done?'<button type="button" class="ghost" data-c="'+esc(t.key)+'">'+sv('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>')+'Rouvrir la tâche</button>':'<button type="button" class="btn okb" data-c="'+esc(t.key)+'"><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Marquer comme faite</button>'):'<span class="sub">Seul·e '+esc(nm(t.who))+' peut cocher cette tâche.</span>')+
+       (mine?'<button type="button" class="ghost'+(armed===t.key?' dz':'')+'" data-x="'+esc(t.key)+'" style="margin-left:auto">'+sv(P.trash)+(armed===t.key?'Confirmer la suppression':'Supprimer')+'</button>':'')+'</div>'+
+     '<section class="tsec"><h4>'+sv(P.clip)+'Pièces jointes <span class="n">'+files.length+'</span></h4>'+(files.length?'<div class="files" id="mfiles">'+fileTiles(files,mine,'data-rf')+'</div>':'<div class="sub">Aucune pièce jointe.</div>')+
+       (mine?'<label class="drop" id="mdrop" style="margin-top:10px"><input type="file" id="mfile" multiple><b>'+(busy?'Envoi en cours…':'Ajouter des pièces jointes')+'</b>Clique, glisse un fichier, ou colle une capture (Ctrl+V)</label>':'')+'</section>'+
+     '<div class="tfoot">Créée le '+fmtDT(t.created_at)+(done?' · terminée le '+fmtDT(t.done_at):'')+'</div>'+
+   '</div></div></div>';
   $('mtitle').textContent=t.title;
   const mf=$('mfiles');if(mf)fillNames(mf,files);
   wireDrop($('mdrop'),fs=>addToTask(t,fs));
@@ -819,7 +872,7 @@ const inCat=x=>(x.category_id||'')===cat;
 const catOf=id=>CATS.find(c=>c.id===id);
 const catName=id=>id?((catOf(id)||{}).name||'Général'):'Général';
 const catCol=c=>c&&COLS.includes(c.color)?c.color:'#6b7180';
-function setCat(id){cat=id;cdir='';cmenu=null;try{localStorage.setItem('forge-cat',id)}catch(e){}dd.flist.v='all';dd.tlist.v='';render()}
+function setCat(id){cat=id;cdir='';cmenu=null;if(typeof csel!=='undefined')csel.clear();try{localStorage.setItem('forge-cat',id)}catch(e){}dd.flist.v='all';dd.tlist.v='';render()}
 const fmtSize=b=>b<1024?b+' o':b<1048576?Math.round(b/1024)+' Ko':b<1073741824?(b/1048576).toFixed(1).replace('.',',')+' Mo':(b/1073741824).toFixed(2).replace('.',',')+' Go';
 const fmtDate=d=>{try{return new Date(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}catch(e){return ''}};
 $('cnewf').innerHTML=sv(NEWF)+'<span class="lbl">Nouveau dossier</span>';
@@ -932,7 +985,8 @@ function ftype(x){if(x.kind==='folder')return 'folder';const e=extOf(x.name),m=x
   if(/^video\//.test(m))return 'video';if(/^audio\//.test(m))return 'audio';return 'file'}
 const thumbOf=x=>{const t=ftype(x);if(t==='image'&&URLS[x.path])return '<div class="cth"><img alt="" loading="lazy" src="'+esc(URLS[x.path])+'"></div>';const [ic,col,lab]=FTI[t];return '<div class="cth" title="'+lab+'" style="color:'+col+';background:'+col+'22">'+sv(ic)+'</div>'};
 const partsOf=x=>{const m=String(x.path||'').match(/^(.*)#(\d+)$/);return m?[...Array(+m[2]).keys()].map(i=>m[1]+'.p'+i):(x.path?[x.path]:[])};
-let cview='list',ctreeOn=false;const xopen=new Set();
+let cview='list',ctreeOn=false;const xopen=new Set(),csel=new Set();let clast=null;
+const CHKP='<path d="M5 12.5l4.5 4.5L19 7.5"/>';
 function setCview(v){if(v===cview)return;cview=v;document.querySelectorAll('[data-cv]').forEach(b=>b.classList.toggle('on',b.dataset.cv===v));render();paintCloud();if(sb&&session)sb.auth.updateUser({data:{cloud_view:v}}).catch(()=>{})}
 const isImgM=m=>/^image\//.test(m||'');
 function cloudKids(pid){return CLOUD.filter(x=>inCat(x)&&(x.parent_id||'')===pid).sort((a,b)=>a.kind!==b.kind?(a.kind==='folder'?-1:1):a.name.localeCompare(b.name,'fr',{numeric:true,sensitivity:'base'}))}
@@ -941,7 +995,7 @@ function descendants(id){const out=[],walk=p=>{for(const x of CLOUD)if(x.parent_
 function uniqName(n,dir,self){const names=new Set(cloudKids(dir||'').filter(x=>x.id!==self).map(x=>x.name.toLowerCase()));if(!names.has(n.toLowerCase()))return n;const m=n.match(/^(.*?)(\.[^.]*)?$/);for(let k=2;k<999;k++){const c=m[1]+' ('+k+')'+(m[2]||'');if(!names.has(c.toLowerCase()))return c}return n}
 const TRIED=new Set();let signing=false;
 async function signPaths(ps){if(signing)return;signing=true;ps.forEach(p=>TRIED.add(p));try{Object.assign(URLS,await getUrls(ps))}catch(e){}finally{signing=false}paintCloud()}
-function goDir(id){cdir=id||'';cmenu=null;for(const a of cloudTrail(cdir))xopen.add(a.id);if(innerWidth<=820)ctreeOn=false;paintCloud()}
+function goDir(id){cdir=id||'';cmenu=null;csel.clear();clast=null;for(const a of cloudTrail(cdir))xopen.add(a.id);if(innerWidth<=820)ctreeOn=false;paintCloud()}
 function treeHTML(pid,dep){return cloudKids(pid).filter(f=>f.kind==='folder').map(f=>{const id=esc(f.id),has=CLOUD.some(c=>c.parent_id===f.id&&c.kind==='folder'),op=xopen.has(f.id);
   return '<div class="tnode'+(f.id===cdir?' on':'')+'" style="--d:'+dep+'" data-dropdir="'+id+'"><button type="button" class="tw'+(op?' op':'')+'" data-ctog="'+id+'" aria-label="'+(op?'Replier':'Déplier')+'" aria-expanded="'+op+'"'+(has?'':' disabled')+'>'+sv(P.chev)+'</button><button type="button" class="tl" data-cdir="'+id+'">'+sv(P.dossier)+'<span>'+esc(f.name)+'</span></button></div>'+(op&&has?treeHTML(f.id,dep+1):'')}).join('')}
 function paintCloud(){
@@ -966,9 +1020,12 @@ function paintCloud(){
   const meta=x=>x.kind==='folder'?(()=>{const n=CLOUD.filter(c=>c.parent_id===x.id).length;return n?n+' élément'+(n>1?'s':''):'Vide'})():fmtSize(+x.size||0);
   if(!kids.length)$('cloud').innerHTML='<div class="empty cempty" style="border:0;background:none">'+sv(P.cloud)+'<b>'+(cdir?'Ce dossier est vide':'Le cloud de « '+esc(catName(cat))+' » est vide')+'</b>Glisse des fichiers ici, colle une capture (Ctrl+V) ou clique sur « Importer ».<br>Les gros fichiers (modèles, textures, animations) sont acceptés.</div>';
   else if(cview==='grid')$('cloud').innerHTML='<div class="cgrid">'+kids.map((x,i)=>{const id=esc(x.id),f=x.kind==='folder';
-      return '<div class="ctile"'+(x.owner===me?' draggable="true" data-drag="'+id+'"':'')+(f?' data-dropdir="'+id+'"':'')+'><button type="button" class="tb" data-copen="'+id+'">'+thumbOf(x)+'<div class="tt">'+esc(x.name)+'</div><div class="sub">'+meta(x)+'</div></button><button type="button" class="del" data-cmenu="'+id+'" aria-label="Actions" aria-haspopup="menu" aria-expanded="'+(cmenu===x.id)+'">'+sv(DOTS)+'</button>'+menu(x,false)+'</div>'}).join('')+'</div>';
-  else $('cloud').innerHTML='<div class="chead"><span></span><span>Nom</span><span>Taille</span><span>Ajouté par</span><span>Modifié</span><span></span></div>'+kids.map((x,i)=>{const id=esc(x.id),f=x.kind==='folder',up=kids.length>4&&i>=kids.length-2;
-      return '<div class="crow"'+(x.owner===me?' draggable="true" data-drag="'+id+'"':'')+(f?' data-dropdir="'+id+'"':'')+'>'+thumbOf(x)+'<button type="button" class="tb" data-copen="'+id+'" title="'+esc(x.name)+'"><div class="tt">'+esc(x.name)+'</div><div class="sub">'+meta(x)+' · '+esc(nm(x.owner))+' · '+fmtDate(x.updated_at||x.created_at)+'</div></button><span class="csz">'+(f?meta(x):fmtSize(+x.size||0))+'</span><span class="cby">'+esc(nm(x.owner))+'</span><span class="cdt">'+fmtDate(x.updated_at||x.created_at)+'</span><button type="button" class="del" data-cmenu="'+id+'" aria-label="Actions" aria-haspopup="menu" aria-expanded="'+(cmenu===x.id)+'">'+sv(DOTS)+'</button>'+menu(x,up)+'</div>'}).join('');
+      return '<div class="ctile'+(csel.has(x.id)?' sel':'')+'"'+(x.owner===me?' draggable="true" data-drag="'+id+'"':'')+(f?' data-dropdir="'+id+'"':'')+'><button type="button" class="csel" data-csel="'+id+'" aria-label="Sélectionner" aria-pressed="'+csel.has(x.id)+'"><svg viewBox="0 0 24 24">'+CHKP+'</svg></button><button type="button" class="tb" data-copen="'+id+'">'+thumbOf(x)+'<div class="tt">'+esc(x.name)+'</div><div class="sub">'+meta(x)+'</div></button><button type="button" class="del" data-cmenu="'+id+'" aria-label="Actions" aria-haspopup="menu" aria-expanded="'+(cmenu===x.id)+'">'+sv(DOTS)+'</button>'+menu(x,false)+'</div>'}).join('')+'</div>';
+  else $('cloud').innerHTML='<div class="chead"><span></span><span></span><span>Nom</span><span>Taille</span><span>Ajouté par</span><span>Modifié</span><span></span></div>'+kids.map((x,i)=>{const id=esc(x.id),f=x.kind==='folder',up=kids.length>4&&i>=kids.length-2;
+      return '<div class="crow'+(csel.has(x.id)?' sel':'')+'"'+(x.owner===me?' draggable="true" data-drag="'+id+'"':'')+(f?' data-dropdir="'+id+'"':'')+'><button type="button" class="csel" data-csel="'+id+'" aria-label="Sélectionner" aria-pressed="'+csel.has(x.id)+'"><svg viewBox="0 0 24 24">'+CHKP+'</svg></button>'+thumbOf(x)+'<button type="button" class="tb" data-copen="'+id+'" title="'+esc(x.name)+'"><div class="tt">'+esc(x.name)+'</div><div class="sub">'+meta(x)+' · '+esc(nm(x.owner))+' · '+fmtDate(x.updated_at||x.created_at)+'</div></button><span class="csz">'+(f?meta(x):fmtSize(+x.size||0))+'</span><span class="cby">'+esc(nm(x.owner))+'</span><span class="cdt">'+fmtDate(x.updated_at||x.created_at)+'</span><button type="button" class="del" data-cmenu="'+id+'" aria-label="Actions" aria-haspopup="menu" aria-expanded="'+(cmenu===x.id)+'">'+sv(DOTS)+'</button>'+menu(x,up)+'</div>'}).join('');
+  for(const id of [...csel])if(!kids.some(k=>k.id===id))csel.delete(id);
+  $('cloud').classList.toggle('selmode',csel.size>0);
+  paintSelBar(kids);
   const tot=CLOUD.filter(x=>inCat(x)&&x.kind==='file'),fo=kids.filter(x=>x.kind==='folder').length,fi=kids.length-fo;
   $('cstat').innerHTML=stgHTML(0)+(R2ON?stgHTML(0,'Pièces jointes, photos et musiques (Supabase)','sb'):'')+'<span>'+esc((fo?fo+' dossier'+(fo>1?'s':'')+' · ':'')+fi+' fichier'+(fi>1?'s':'')+' ici · '+tot.length+' fichier'+(tot.length>1?'s':'')+' et '+fmtSize(tot.reduce((a,x)=>a+(+x.size||0),0))+' dans la catégorie')+'</span>';
 }
@@ -1091,15 +1148,16 @@ $('ctreeb').addEventListener('click',()=>{ctreeOn=!ctreeOn;paintCloud()});
   z.addEventListener('dragleave',e=>{if(!has(e))return;depth=Math.max(0,depth-1);if(!depth)z.classList.remove('over')});
   z.addEventListener('drop',e=>{if(!has(e))return;e.preventDefault();depth=0;z.classList.remove('over');cloudUpload([...e.dataTransfer.files])});}
 /* glisser un élément sur un dossier pour le déplacer */
-let dragId=null;
-document.addEventListener('dragstart',e=>{const d=e.target.closest&&e.target.closest('[data-drag]');if(!d)return;dragId=d.dataset.drag;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId)});
-document.addEventListener('dragend',()=>{dragId=null;document.querySelectorAll('.dropon').forEach(n=>n.classList.remove('dropon'))});
+let dragIds=null;
+document.addEventListener('dragstart',e=>{const d=e.target.closest&&e.target.closest('[data-drag]');if(!d)return;const id=d.dataset.drag;
+  dragIds=csel.has(id)&&csel.size>1?[...csel].filter(k=>{const x=CLOUD.find(c=>c.id===k);return x&&x.owner===me}):[id];
+  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragIds.join(','));
+  if(dragIds.length>1){const g=document.createElement('div');g.textContent=dragIds.length+' éléments';g.style.cssText='position:absolute;top:-100px;left:0;padding:8px 14px;border-radius:10px;background:#ff4d4d;color:#fff;font:700 14px Inter,sans-serif';document.body.appendChild(g);e.dataTransfer.setDragImage(g,10,10);setTimeout(()=>g.remove(),0)}});
+document.addEventListener('dragend',()=>{dragIds=null;document.querySelectorAll('.dropon').forEach(n=>n.classList.remove('dropon'))});
 const canDrop=(id,dir)=>{const x=CLOUD.find(c=>c.id===id);if(!x||x.owner!==me||(x.parent_id||'')===dir||id===dir)return false;return !(x.kind==='folder'&&descendants(x.id).some(d=>d.id===dir))};
-document.addEventListener('dragover',e=>{if(!dragId)return;const t=e.target.closest&&e.target.closest('[data-dropdir]');document.querySelectorAll('.dropon').forEach(n=>{if(n!==t)n.classList.remove('dropon')});if(t&&canDrop(dragId,t.dataset.dropdir)){e.preventDefault();t.classList.add('dropon')}});
-document.addEventListener('drop',e=>{if(!dragId)return;const t=e.target.closest&&e.target.closest('[data-dropdir]');const id=dragId;dragId=null;document.querySelectorAll('.dropon').forEach(n=>n.classList.remove('dropon'));
-  if(!t||!canDrop(id,t.dataset.dropdir))return;e.preventDefault();const x=CLOUD.find(c=>c.id===id),dir=t.dataset.dropdir,name=uniqName(x.name,dir,x.id);
-  x.parent_id=dir||null;x.name=name;paintCloud();toast('« '+name+' » déplacé dans « '+(dir?(CLOUD.find(c=>c.id===dir)||{}).name:catName(cat))+' »');
-  run(async()=>chk(await sb.from('cloud_items').update({parent_id:dir||null,name,updated_at:new Date().toISOString()}).eq('id',x.id)))});
+document.addEventListener('dragover',e=>{if(!dragIds)return;const t=e.target.closest&&e.target.closest('[data-dropdir]');document.querySelectorAll('.dropon').forEach(n=>{if(n!==t)n.classList.remove('dropon')});if(t&&dragIds.some(id=>canDrop(id,t.dataset.dropdir))){e.preventDefault();t.classList.add('dropon')}});
+document.addEventListener('drop',e=>{if(!dragIds)return;const t=e.target.closest&&e.target.closest('[data-dropdir]');const ids=dragIds;dragIds=null;document.querySelectorAll('.dropon').forEach(n=>n.classList.remove('dropon'));
+  if(!t)return;const dir=t.dataset.dropdir,xs=ids.filter(id=>canDrop(id,dir)).map(id=>CLOUD.find(c=>c.id===id));if(!xs.length)return;e.preventDefault();moveItems(xs,dir)});
 async function previewDlg(x){
   const t=ftype(x),big=partsOf(x).length>1;let url=null,body;
   if(!big&&['image','video','audio','doc'].includes(t)){url=URLS[x.path];if(!url){try{const lm=await getUrls([x.path]);url=lm[x.path];if(url)URLS[x.path]=url}catch(e){}}}
@@ -1113,27 +1171,68 @@ async function previewDlg(x){
   $('pvt').textContent=x.name;$('pvdl').onclick=()=>{closeDlg();cdownload(x)};
 }
 function moveDlg(x){
-  const ban=new Set([x.id,...(x.kind==='folder'?descendants(x.id).map(d=>d.id):[])]),opts=[{id:'',name:'Racine du cloud',dep:0}];
+  const xs=(Array.isArray(x)?x:[x]).filter(Boolean);if(!xs.length)return;
+  const ban=new Set();for(const a of xs){ban.add(a.id);if(a.kind==='folder')descendants(a.id).forEach(d=>ban.add(d.id))}
+  const opts=[{id:'',name:'Racine du cloud',dep:0}];
   const walk=(pid,dep)=>{for(const f of cloudKids(pid))if(f.kind==='folder'&&!ban.has(f.id)){opts.push({id:f.id,name:f.name,dep});walk(f.id,dep+1)}};walk('',1);
-  let sel=x.parent_id||'';
+  let sel=xs[0].parent_id||'';
   openDlg('<div class="mh"><h3 style="padding-top:0">Déplacer</h3><button type="button" class="del" data-dlgclose="1" aria-label="Fermer">'+sv(P.x)+'</button></div><p class="sub" id="mvn" style="margin:0"></p><div class="mvl" id="mvl" role="listbox"></div><div class="acts" style="justify-content:flex-end"><button type="button" class="ghost" data-dlgclose="1">Annuler</button><button type="button" class="btn" id="mvok">Déplacer ici</button></div>');
-  $('mvn').textContent='« '+x.name+' » vers :';
+  $('mvn').textContent=(xs.length>1?xs.length+' éléments':'« '+xs[0].name+' »')+' vers :';
   const paint=()=>{$('mvl').innerHTML=opts.map((o,i)=>'<button type="button" role="option" aria-selected="'+(o.id===sel)+'" data-i="'+i+'" class="'+(o.id===sel?'on':'')+'" style="padding-left:'+(12+o.dep*20)+'px">'+sv(o.id?P.dossier:P.cloud)+'<span>'+esc(o.name)+'</span></button>').join('')};paint();
   $('mvl').onclick=e=>{const b=e.target.closest('button');if(b){sel=opts[+b.dataset.i].id;paint()}};
-  $('mvok').onclick=()=>{closeDlg();if(sel===(x.parent_id||''))return;const name=uniqName(x.name,sel,x.id);x.parent_id=sel||null;x.name=name;paintCloud();
-    run(async()=>chk(await sb.from('cloud_items').update({parent_id:sel||null,name,updated_at:new Date().toISOString()}).eq('id',x.id)))};
+  $('mvok').onclick=()=>{closeDlg();moveItems(xs,sel)};
+}
+function moveItems(xs,dir){
+  const todo=xs.filter(a=>a.owner===me&&(a.parent_id||'')!==dir&&a.id!==dir&&!(a.kind==='folder'&&descendants(a.id).some(d=>d.id===dir)));
+  if(!todo.length)return;
+  for(const a of todo){a.name=uniqName(a.name,dir,a.id);a.parent_id=dir||null}
+  csel.clear();paintCloud();
+  toast((todo.length>1?todo.length+' éléments déplacés':'« '+todo[0].name+' » déplacé')+' dans « '+(dir?(CLOUD.find(c=>c.id===dir)||{}).name:catName(cat))+' »');
+  run(async()=>{const now=new Date().toISOString();for(const a of todo)chk(await sb.from('cloud_items').update({parent_id:dir||null,name:a.name,updated_at:now}).eq('id',a.id))});
 }
 function cdelete(x){
-  if(x.kind==='file'){confirmDlg('Supprimer ce fichier ?','« '+x.name+' » ('+fmtSize(+x.size||0)+') sera supprimé définitivement pour toute l’équipe.','Supprimer',()=>{
-    CLOUD=CLOUD.filter(c=>c.id!==x.id);paintCloud();run(async()=>{chk(await sb.from('cloud_items').delete().eq('id',x.id));const ps=partsOf(x);if(ps.length)await removePaths(ps)})});return}
-  const ds=descendants(x.id);
-  if(ds.some(d=>d.owner!==me)){toast('Ce dossier contient des éléments d’autres personnes : ils doivent d’abord les déplacer ou les supprimer.');return}
-  confirmDlg('Supprimer ce dossier ?','« '+x.name+' »'+(ds.length?' et ses '+ds.length+' élément'+(ds.length>1?'s':''):'')+' seront supprimés définitivement pour toute l’équipe.','Supprimer',()=>{
-    const dep=new Map([x,...ds].map(a=>[a.id,cloudTrail(a.id).length]));const all=[x,...ds].sort((a,b)=>dep.get(b.id)-dep.get(a.id));
-    const ids=new Set(all.map(a=>a.id)),paths=all.flatMap(a=>partsOf(a));
-    CLOUD=CLOUD.filter(c=>!ids.has(c.id));if(ids.has(cdir))cdir=x.parent_id||'';paintCloud();
-    run(async()=>{for(const a of all)chk(await sb.from('cloud_items').delete().eq('id',a.id));if(paths.length)await removePaths(paths)})});
+  const xs=(Array.isArray(x)?x:[x]).filter(Boolean);if(!xs.length)return;
+  if(xs.some(a=>a.owner!==me)){toast('Tu ne peux supprimer que tes propres fichiers et dossiers.');return}
+  const all=new Map();for(const a of xs){all.set(a.id,a);if(a.kind==='folder')descendants(a.id).forEach(d=>all.set(d.id,d))}
+  const items=[...all.values()];
+  if(items.some(d=>d.owner!==me)){toast('Un dossier choisi contient des éléments d’autres personnes : ils doivent d’abord les déplacer ou les supprimer.');return}
+  const nf=items.filter(a=>a.kind==='file'),size=nf.reduce((s,a)=>s+(+a.size||0),0);
+  const title=xs.length>1?'Supprimer '+xs.length+' éléments ?':(xs[0].kind==='file'?'Supprimer ce fichier ?':'Supprimer ce dossier ?');
+  const text=(xs.length>1?xs.length+' éléments':'« '+xs[0].name+' »')+(items.length>xs.length?' et leur contenu ('+(items.length-xs.length)+' élément'+(items.length-xs.length>1?'s':'')+')':'')+(size?' · '+fmtSize(size):'')+' seront supprimés définitivement pour toute l’équipe.';
+  confirmDlg(title,text,'Supprimer',()=>{
+    const dep=new Map(items.map(a=>[a.id,cloudTrail(a.id).length]));items.sort((a,b)=>dep.get(b.id)-dep.get(a.id));
+    const ids=new Set(items.map(a=>a.id)),paths=items.flatMap(a=>partsOf(a));
+    CLOUD=CLOUD.filter(c=>!ids.has(c.id));if(ids.has(cdir))cdir=xs[0].parent_id||'';csel.clear();paintCloud();
+    run(async()=>{for(const a of items)chk(await sb.from('cloud_items').delete().eq('id',a.id));if(paths.length)await removePaths(paths)})});
 }
+async function bulkDownload(xs){const fs=xs.filter(a=>a.kind==='file');for(const f of fs){while(XF.on)await new Promise(r=>setTimeout(r,300));await cdownload(f)}}
+function paintSelBar(kids){
+  const sb2=$('cselbar');if(!csel.size){sb2.hidden=true;sb2.innerHTML=''}else{const sel=kids.filter(k=>csel.has(k.id)),allMine=sel.every(k=>k.owner===me),nf=sel.filter(k=>k.kind==='file').length;
+    sb2.hidden=false;sb2.innerHTML='<b>'+sel.length+' élément'+(sel.length>1?'s':'')+' sélectionné'+(sel.length>1?'s':'')+'</b>'+(nf?'<button type="button" class="ghost" data-bulk="dl">'+sv(DLI)+'Télécharger'+(nf>1?' ('+nf+')':'')+'</button>':'')+
+      (allMine?'<button type="button" class="ghost" data-bulk="mv">'+sv(MOVE)+'Déplacer</button><button type="button" class="ghost" data-bulk="rm">'+sv(P.trash)+'Supprimer</button>':'')+
+      '<button type="button" class="ghost" data-bulk="all">Tout sélectionner</button><button type="button" class="ghost" data-bulk="none" aria-label="Annuler la sélection">'+sv(P.x)+'</button>'+
+      (allMine?'':'<span class="sub">Déplacer et supprimer : seulement si tous les éléments choisis sont à toi.</span>')+'<span class="sub">Astuce : Ctrl + clic pour ajouter un élément, Maj + clic pour prendre toute une plage, Ctrl + A pour tout prendre, Suppr pour supprimer.</span>'}
+}
+function paintSel(){const kids=cloudKids(cdir);for(const id of [...csel])if(!kids.some(k=>k.id===id))csel.delete(id);
+  document.querySelectorAll('#cloud [data-copen]').forEach(b=>{const on=csel.has(b.dataset.copen),box=b.closest('.crow,.ctile');if(box)box.classList.toggle('sel',on);const c=box&&box.querySelector('.csel');if(c)c.setAttribute('aria-pressed',on)});
+  $('cloud').classList.toggle('selmode',csel.size>0);paintSelBar(kids)}
+function selClick(id,ev){
+  const kids=cloudKids(cdir).map(k=>k.id);
+  if(ev.shiftKey&&clast&&kids.includes(clast)){const a=kids.indexOf(clast),b=kids.indexOf(id);if(!(ev.ctrlKey||ev.metaKey))csel.clear();kids.slice(Math.min(a,b),Math.max(a,b)+1).forEach(k=>csel.add(k))}
+  else if(ev.ctrlKey||ev.metaKey){if(csel.has(id))csel.delete(id);else csel.add(id);clast=id}
+  else{csel.clear();csel.add(id);clast=id}
+  paintSel();
+}
+const openItem=x=>{if(x.kind==='folder')goDir(x.id);else previewDlg(x)};
+document.addEventListener('dblclick',ev=>{const b=ev.target.closest&&ev.target.closest('[data-copen]');if(!b||ev.ctrlKey||ev.metaKey||ev.shiftKey)return;const x=CLOUD.find(c=>c.id===b.dataset.copen);if(x)openItem(x)});
+document.addEventListener('keydown',ev=>{
+  if(tab!=='cloud'||$('dlg').innerHTML||$('confirm').innerHTML||openT)return;
+  const inField=ev.target.closest&&ev.target.closest('input,textarea,select,[contenteditable]');if(inField)return;
+  if(ev.key==='Enter'){const b=ev.target.closest&&ev.target.closest('[data-copen]');if(b){ev.preventDefault();const x=CLOUD.find(c=>c.id===b.dataset.copen);if(x)openItem(x)}return}
+  if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==='a'){ev.preventDefault();cloudKids(cdir).forEach(k=>csel.add(k.id));paintCloud();return}
+  if((ev.key==='Delete'||ev.key==='Backspace')&&csel.size){ev.preventDefault();cdelete(CLOUD.filter(c=>csel.has(c.id)));return}
+  if(ev.key==='Escape'&&csel.size&&!cmenu){csel.clear();paintCloud()}
+});
 document.addEventListener('click',ev=>{
   const dc=ev.target.closest('[data-dlgclose]');if(dc&&(dc.tagName==='BUTTON'||ev.target===dc)){closeDlg();return}
   if(cmenu&&!ev.target.closest('.cmenu')&&!ev.target.closest('[data-cmenu]')){cmenu=null;paintCloud()}
@@ -1145,7 +1244,16 @@ document.addEventListener('click',ev=>{
   if(ds.ctog){if(xopen.has(ds.ctog))xopen.delete(ds.ctog);else xopen.add(ds.ctog);paintCloud();return}
   if('cdir' in ds){goDir(ds.cdir);return}
   if(ds.cmenu){cmenu=cmenu===ds.cmenu?null:ds.cmenu;paintCloud();if(cmenu){const f=$('cloud').querySelector('.cmenu button');f&&f.focus()}return}
-  if(ds.copen){const x=CLOUD.find(c=>c.id===ds.copen);if(!x)return;if(x.kind==='folder')goDir(x.id);else previewDlg(x);return}
+  if(ds.csel){if(csel.has(ds.csel))csel.delete(ds.csel);else csel.add(ds.csel);clast=ds.csel;paintSel();return}
+  if(ds.bulk){const xs=CLOUD.filter(c=>csel.has(c.id));
+    if(ds.bulk==='none'){csel.clear();paintCloud()}else if(ds.bulk==='all'){cloudKids(cdir).forEach(k=>csel.add(k.id));paintCloud()}
+    else if(ds.bulk==='dl')bulkDownload(xs);else if(ds.bulk==='mv')moveDlg(xs);else if(ds.bulk==='rm')cdelete(xs);return}
+  if(ds.copen){const x=CLOUD.find(c=>c.id===ds.copen);if(!x)return;
+    const touch=matchMedia('(pointer:coarse)').matches;
+    if(ev.shiftKey||ev.ctrlKey||ev.metaKey||!touch)selClick(x.id,ev);
+    else if(csel.size){if(csel.has(x.id))csel.delete(x.id);else csel.add(x.id);paintSel()}
+    else openItem(x);
+    return}
   if(ds.cact){const x=CLOUD.find(c=>c.id===ds.id);cmenu=null;paintCloud();if(!x)return;
     if(ds.cact==='open')goDir(x.id);
     else if(ds.cact==='view')previewDlg(x);
