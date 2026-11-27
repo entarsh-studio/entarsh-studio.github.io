@@ -50,7 +50,7 @@ Si ton projet Supabase existait déjà avant cette mise à jour, lance **une seu
 Si tu l'avais déjà lancé avant l'ajout des images de catégorie, lance aussi :
 `alter table public.categories add column if not exists image text not null default '';`
 
-- **Catégories** : en haut des onglets Tâches, Créer, Listes et Cloud. Chaque catégorie (ex. *Helper*) a ses propres listes, tâches et son propre cloud. « Général » regroupe tout ce qui a été créé sans catégorie.
+- **Catégories** (devenues « Projets ») : chaque catégorie (ex. *Helper*) a ses propres listes, tâches et son propre cloud. « Général » regroupe tout ce qui a été créé sans catégorie.
   Seul le créateur d'une catégorie peut la modifier ou la supprimer, et seulement quand elle est vide.
 - **Cloud** : dossiers et fichiers façon Explorateur (arborescence, vue liste ou grandes icônes). Les gros fichiers (modèles Blender, textures, animations) sont découpés automatiquement en morceaux de 45 Mo à l'envoi et recollés au téléchargement, jusqu'à 2 Go par fichier. Glisse des fichiers dans la page, colle une capture (Ctrl+V) ou clique sur *Importer*.
   Tout le monde voit, ouvre et télécharge tout ; seul l'auteur d'un fichier ou d'un dossier peut le renommer, le déplacer ou le supprimer.
@@ -60,6 +60,20 @@ Si tu l'avais déjà lancé avant l'ajout des images de catégorie, lance aussi 
 
 Lance une fois `maj-stockage.sql` dans **SQL Editor** → **Run** pour que la barre « Stockage du site » affiche le chiffre exact (sinon Forge fait une estimation).
 Si tu passes à l'offre Pro de Supabase, mets `storageGB: 100` dans `config.js`.
+
+## Mise à jour : travail d'équipe (Planning, Discussion, Bugs, Idées, Wiki, Activité)
+
+Lance **une seule fois** `maj-collab.sql` dans **SQL Editor** → **New query** → **Run** (si tu ne l'as pas encore fait, lance aussi `maj-taches.sql` avant).
+Tant que ce script n'est pas lancé, les nouveaux onglets affichent « Mise à jour de la base nécessaire » ; le reste du site marche normalement.
+
+- **Projets** (anciennes catégories) : dans la colonne de gauche, avec une jauge d'avancement. Sur téléphone, le bouton du projet est en haut.
+- **Tâches** : un seul onglet. Filtres *À faire*, *Pour moi* (tous projets) et *Faites*, listes en pastilles. *Nouvelle tâche* ouvre une fenêtre avec icône et couleur au choix, difficulté réglée sur une rampe, délai et échéance. Chaque tâche a des commentaires.
+- **Planning** : calendrier du mois avec les événements (jalon, réunion, sortie) et les tâches qui ont une échéance.
+- **Discussion** : un fil de messages par projet.
+- **Bugs** : tableau Nouveau → En cours → Corrigé → Vérifié, avec gravité et captures. Tout le monde peut faire avancer un bug ; seul son auteur peut le supprimer.
+- **Idées** : propositions avec vote pour ou contre.
+- **Wiki** : pages modifiables par toute l'équipe ; seul le créateur d'une page peut la supprimer.
+- **Activité** : journal automatique de ce que fait l'équipe.
 
 ## Cloud de 10 Go gratuits, sans carte bancaire (Backblaze B2 + Worker Cloudflare)
 
