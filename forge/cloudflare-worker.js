@@ -161,7 +161,9 @@ function b2Store(env) {
   const fail = async (r, what) => { const t = await r.text().catch(() => ""); const m = /<Message>([^<]*)<\/Message>/.exec(t); throw new Error("Backblaze (" + what + ") : " + (m ? m[1] : "erreur " + r.status)); };
   return {
     name: "Backblaze B2",
-    async exists(k) { const r = await s3("HEAD", k); if (r.status === 404) return false; if (!r.ok) await fail(r, "vérification"); return true; },
+    // Backblaze répond 403 (et non 404) quand un fichier n'existe pas encore : on le traite comme « absent ».
+    // Les noms de fichiers sont de toute façon uniques (date + code au hasard).
+    async exists(k) { const r = await s3("HEAD", k); return r.ok; },
     async put(k, body, len, ct) {
       let b = body;
       if (typeof FixedLengthStream !== "undefined" && body) { const fl = new FixedLengthStream(len); body.pipeTo(fl.writable); b = fl.readable; }
