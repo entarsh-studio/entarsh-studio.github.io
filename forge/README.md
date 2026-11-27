@@ -43,6 +43,17 @@ Tant que les inscriptions sont ouvertes, **n'importe qui qui trouve l'adresse pe
 **Authentication** → **Sign In / Providers** → désactive **Allow new users to sign up**.
 Pour ajouter quelqu'un plus tard : rouvre-les quelques minutes, ou utilise **Authentication** → **Users** → **Invite user**.
 
+## Mise à jour : catégories et cloud
+
+Si ton projet Supabase existait déjà avant cette mise à jour, lance **une seule fois** le fichier `maj-categories-cloud.sql` dans **SQL Editor** → **New query** → **Run**.
+(Pour un projet tout neuf, `supabase.sql` contient déjà tout.)
+
+- **Catégories** : en haut des onglets Tâches, Créer, Listes et Cloud. Chaque catégorie (ex. *Helper*) a ses propres listes, tâches et son propre cloud. « Général » regroupe tout ce qui a été créé sans catégorie.
+  Seul le créateur d'une catégorie peut la modifier ou la supprimer, et seulement quand elle est vide.
+- **Cloud** : dossiers et fichiers (50 Mo maximum par fichier). Glisse des fichiers dans la page, colle une capture (Ctrl+V) ou clique sur *Importer*.
+  Tout le monde voit, ouvre et télécharge tout ; seul l'auteur d'un fichier ou d'un dossier peut le renommer, le déplacer ou le supprimer.
+  L'offre gratuite de Supabase donne 1 Go de stockage au total (pièces jointes + cloud).
+
 ---
 
 ## Bon à savoir
