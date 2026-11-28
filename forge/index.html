@@ -551,7 +551,10 @@ input::placeholder,textarea::placeholder{color:#5c616c}
 .tbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .trkw{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
 .trkw:empty{display:none}
-.trks{display:flex;gap:6px;overflow-x:auto;flex:1 1 320px;padding:2px 2px 6px;scrollbar-width:thin}
+.trks{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 100%;padding:2px}
+.tedw{margin-left:auto}.tedw:empty{display:none}
+.tedw .ghost{min-height:42px;display:inline-flex;align-items:center;gap:6px;max-width:320px}
+.tedw .ghost span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;display:inline-block;vertical-align:bottom}
 .trk{flex:none;display:flex;align-items:center;gap:8px;min-height:42px;padding:4px 12px 4px 6px;border-radius:6px;border:1px solid #2b2f37;background:#121418;color:var(--mute);font:600 14px var(--hw);letter-spacing:.03em;white-space:nowrap}
 .trk:hover{color:var(--ink);border-color:#3a3f49}
 .trk b{font:700 11px/16px var(--hw);background:#08090b;border-radius:4px;padding:0 6px;color:#aeb3bc}
@@ -817,7 +820,7 @@ input::placeholder,textarea::placeholder{color:#5c616c}
   </section>
   <section class="view" id="v-taches">
     <div class="vh"><div class="vt"><span class="lab vproj"></span><h2>Tâches</h2></div><button type="button" class="btn" id="tnewb" data-tnew="1"></button></div>
-    <div class="tbar"><div class="seg" id="fstat" role="group" aria-label="Filtre"></div></div>
+    <div class="tbar"><div class="seg" id="fstat" role="group" aria-label="Filtre"></div><div class="tedw" id="tedw"></div></div>
     <div class="trkw" id="tracks"></div>
     <div id="tasks"></div>
   </section>
@@ -1938,7 +1941,9 @@ function paintTasks(){
   const cur=lists.find(l=>l.key===trk);
   $('tracks').innerHTML=!loaded||fstat==='moi'?(fstat==='moi'?'<p class="sub" style="margin:0">Toutes les tâches à faire qui te sont attribuées, tous projets confondus.</p>':''):
     '<div class="trks" role="group" aria-label="Listes">'+chip('all','Toutes les listes',null,'',todoN(()=>true))+lists.map(l=>chip(l.key,l.name,l.icon,colOK(l.color),todoN(t=>t.list===l.key))).join('')+(orph?chip('none','Sans liste','liste','',todoN(t=>!lkeys.has(t.list))):'')+
-    '<button type="button" class="trk add" data-newlist="1">'+sv(P.plus)+'Liste</button></div>'+(cur&&cur.uid===me?'<button type="button" class="ghost" data-editlist="'+esc(cur.key)+'" style="min-height:42px;display:inline-flex;align-items:center;gap:6px">'+sv(PEN)+'Modifier la liste</button>':'');
+    '<button type="button" class="trk add" data-newlist="1">'+sv(P.plus)+'Liste</button></div>';
+  $('tedw').innerHTML=loaded&&fstat!=='moi'&&cur&&cur.uid===me?'<button type="button" class="ghost" data-editlist="'+esc(cur.key)+'">'+sv(PEN)+'Modifier « <span></span> »</button>':'';
+  const tew=$('tedw').querySelector('span');if(tew)tew.textContent=cur.name;
   let v,stat=fstat==='done'?'done':'todo',showList=trk==='all',showCat=false,empty;
   if(fstat==='moi'){v=allT.filter(t=>t.who===me&&!doneAt(t));showList=true;showCat=true;empty='<b>Rien pour toi</b>Aucune tâche à faire ne t’est attribuée pour l’instant.'}
   else{v=tasks.filter(t=>(trk==='all'||(trk==='none'?!lkeys.has(t.list):t.list===trk))&&(stat==='done'?!!doneAt(t):!doneAt(t)));
